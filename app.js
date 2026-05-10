@@ -2,7 +2,7 @@ import { UI } from './ui.js';
 
 export const App = {
     worker: null,
-    currentTitle: "zsa_layout",
+    currentTitle: "oma_layout",
 
     init: () => {
         window.addEventListener('error', e => UI.displayFatalError(`[Context Error] ${e.message}`, e.error?.stack));
@@ -49,7 +49,7 @@ export const App = {
                 rawText = await file.text();
             }
             
-            App.currentTitle = file.name.split('.')[0] || "zsa_migration";
+            App.currentTitle = file.name.split('.')[0] || "oma_migration";
             App.currentTitle = App.currentTitle.replace(/_source$/, '').replace(/[^a-zA-Z0-9_]/g, '_');
             
             App.worker.postMessage({ rawText, title: App.currentTitle });
