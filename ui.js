@@ -4,15 +4,12 @@ const MainUtils = {
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
     },
     
-    // THE NEW GENERIC QMK MACRO PARSER
     translateQMKMacro: (code) => {
         if (!code) return "Rebuild as a Custom ZMK Macro.";
         
         let htmlOutput = "";
-        // Clean out boilerplate C code wrappers to get to the juicy stuff
         let cleanCode = code.replace(/if\s*\(.*?\)\s*\{/g, '').replace(/\}/g, '').replace(/break;/g, '').replace(/case ST_MACRO_.*?:/g, '').trim();
 
-        // 1. Process SEND_STRING blocks (The most common Oryx Macro)
         const sendStringRegex = /SEND_STRING\(([\s\S]*?)\);/g;
         let match;
         let hasContent = false;
@@ -21,28 +18,20 @@ const MainUtils = {
             hasContent = true;
             let parsedStr = match[1];
             
-            // Extract literal strings
             parsedStr = parsedStr.replace(/"([^"]+)"/g, ' [TYPE_STR:$1] ');
 
-            // Convert QMK Modifiers
             const mods = { 'SS_LCTL': 'Ctrl', 'SS_LSFT': 'Shift', 'SS_LALT': 'Alt', 'SS_LGUI': 'Cmd/Win', 'SS_RCTL': 'RCtrl', 'SS_RSFT': 'RShift', 'SS_RALT': 'RAlt', 'SS_RGUI': 'RCmd/Win' };
             for (const [qmkMod, uiMod] of Object.entries(mods)) {
                 let modRegex = new RegExp(`${qmkMod}\\(([^)]+)\\)`, 'g');
                 parsedStr = parsedStr.replace(modRegex, `<strong class="text-slate-600 ml-1">${uiMod} +</strong> $1`);
             }
 
-            // Convert Taps, Holds, and Releases
             parsedStr = parsedStr.replace(/SS_TAP\(X_([A-Z0-9_]+)\)/g, '[$1]');
             parsedStr = parsedStr.replace(/SS_DOWN\(X_([A-Z0-9_]+)\)/g, 'Hold [$1]');
             parsedStr = parsedStr.replace(/SS_UP\(X_([A-Z0-9_]+)\)/g, 'Release [$1]');
-            
-            // Convert Delays
             parsedStr = parsedStr.replace(/SS_DELAY\(([0-9]+)\)/g, ' [DELAY:$1] ');
-            
-            // Catch any loose X_ keys
             parsedStr = parsedStr.replace(/X_([A-Z0-9_]+)/g, '[$1]'); 
 
-            // Visual Formatting Passes (Turn brackets into stylized HTML)
             parsedStr = parsedStr.replace(/\[TYPE_STR:([^\]]+)\]/g, '<span class="text-blue-600 font-bold text-[11px] whitespace-nowrap inline-block bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 shadow-sm mx-1">Type "$1"</span>');
             parsedStr = parsedStr.replace(/\[DELAY:([0-9]+)\]/g, '<span class="text-amber-600 font-bold text-[10px] bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mx-1">⏱️ $1ms</span>');
             parsedStr = parsedStr.replace(/\[([A-Z0-9_]+)\]/g, '<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">$1</span>');
@@ -50,7 +39,6 @@ const MainUtils = {
             htmlOutput += `<div class="flex items-center flex-wrap gap-y-2 leading-relaxed mb-2">${parsedStr}</div>`;
         }
 
-        // 2. Process discrete hardware taps (tap_code16, register_code, etc)
         const codeRegex = /(tap_code16|register_code16|unregister_code16|tap_code|register_code|unregister_code)\((.*?)\);/g;
         let tapSteps = [];
         while ((match = codeRegex.exec(cleanCode)) !== null) {
@@ -68,7 +56,6 @@ const MainUtils = {
             htmlOutput += `<div class="flex items-center flex-wrap gap-2 mt-2">${tapSteps.join('<span class="text-slate-300 text-[10px]">➔</span>')}</div>`;
         }
 
-        // Return the beautiful combined output
         if (hasContent) {
             return `
                 <strong class="block text-slate-800 text-xs mb-2">Macro Sequence:</strong>
@@ -176,8 +163,9 @@ export const UI = {
             return `<div class="flex flex-col gap-3 p-4">` + Object.entries(logCat).map(([original, data]) => {
                 
                 let contextHtml = '';
+                let foundConfig = '';
+
                 if (data.contexts && data.contexts.length > 0) {
-                    
                     let occurrencesMap = new Map();
                     data.contexts.forEach(c => {
                         if (!c) return;
@@ -190,24 +178,24 @@ export const UI = {
                     });
 
                     let occurrencesStr = Array.from(occurrencesMap.values()).join('<br>');
-                    let foundConfig = data.contexts.find(c => c && c.config)?.config;
                     
-                    let configHtml = '';
-                    if (foundConfig) {
-                        configHtml = `
-                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mt-4 mb-2">Extracted Source Configuration</strong>
-                            <pre class="block w-full p-4 bg-slate-900 text-blue-300 rounded-lg text-[12px] font-mono shadow-inner overflow-x-auto whitespace-pre-wrap">${MainUtils.escapeHTML(foundConfig)}</pre>
-                        `;
-                    }
-
-                    if (occurrencesStr || configHtml) {
+                    // Grab the extracted config (Tap Dance logic, Custom Macro logic, etc)
+                    foundConfig = data.contexts.find(c => c && c.config)?.config || '';
+                    
+                    if (occurrencesStr) {
                         contextHtml = `
                             <div class="mt-5 pt-4 border-t border-slate-200/60">
-                                ${occurrencesStr ? `<strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-2">Hardware Locations & Colors</strong><p class="text-[13px] text-slate-600 font-medium leading-[1.8]">${occurrencesStr}</p>` : ''}
-                                ${configHtml}
+                                <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-2">Hardware Locations & Colors</strong>
+                                <p class="text-[13px] text-slate-600 font-medium leading-[1.8]">${occurrencesStr}</p>
                             </div>
                         `;
                     }
+                }
+
+                // >>> NEW: Merge original string and found configuration nicely! <<<
+                let codeDisplay = original;
+                if (foundConfig) {
+                    codeDisplay += `\n\n// --- Extracted Parameters / Definition ---\n${foundConfig}`;
                 }
 
                 return `
@@ -225,8 +213,8 @@ export const UI = {
                             <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${MainUtils.escapeHTML(data.reason)}</p>
                         </div>
                         <div>
-                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Exact Source Code</strong>
-                            <code class="block w-full p-3 bg-slate-800 text-emerald-400 rounded-lg text-xs font-mono break-all shadow-inner overflow-x-auto">${MainUtils.escapeHTML(original)}</code>
+                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Exact Source Code & Parameters</strong>
+                            <code class="block w-full p-3 bg-slate-800 text-emerald-400 rounded-lg text-xs font-mono whitespace-pre-wrap shadow-inner overflow-x-auto">${MainUtils.escapeHTML(codeDisplay)}</code>
                         </div>
                         ${contextHtml}
                     </div>
@@ -300,7 +288,7 @@ export const UI = {
                     <div class="stat-box ${warnInstances > 0 ? 'warning' : ''}"><div class="stat-num">${warnInstances}</div><div class="stat-label">Actions Required</div></div>
                 </div>
                 
-                <details class="report-category">
+                <details class="report-category" open>
                     <summary>
                         <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         Action Required: Rebuild these features <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">${warnInstances}</span>
@@ -310,7 +298,7 @@ export const UI = {
                     </div>
                 </details>
                 
-                <details class="report-category" open>
+                <details class="report-category">
                     <summary>
                         <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                         Your Custom Macros <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">${macroCount}</span>
