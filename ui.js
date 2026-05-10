@@ -192,7 +192,23 @@ export const UI = {
                     }
                 }
 
-                // >>> NEW: Sleek, separated parameter box <<<
+                // >>> NEW: Generate the Abstraction Description if we found a config <<<
+                let abstractionHTML = '';
+                if (foundConfig) {
+                    let decoded = MainUtils.translateQMKMacro(foundConfig);
+                    // Only show it if it successfully decoded something meaningful
+                    if (decoded !== "Rebuild as a Custom ZMK Macro.") {
+                        abstractionHTML = `
+                            <div class="mb-4">
+                                <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Decoded Instructions</strong>
+                                <div class="p-3 bg-indigo-50/40 border border-indigo-100 rounded-lg shadow-sm">
+                                    ${decoded}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
                 let configDisplay = '';
                 if (foundConfig) {
                     configDisplay = `
@@ -217,8 +233,11 @@ export const UI = {
                             <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">ZMK Replacement Suggestion</strong>
                             <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${MainUtils.escapeHTML(data.reason)}</p>
                         </div>
+                        
+                        ${abstractionHTML}
+
                         <div>
-                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Exact Source Code</strong>
+                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Exact Source Code & Parameters</strong>
                             <div class="rounded-lg overflow-hidden shadow-inner bg-slate-800 border border-slate-700">
                                 <code class="block w-full p-3 text-emerald-400 text-xs font-mono break-all">${MainUtils.escapeHTML(original)}</code>
                                 ${configDisplay}
