@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoyaGo | ZSA to MoErgo Go60/Glove80 Converter</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base { body { @apply bg-slate-50 text-slate-700 font-sans min-h-screen selection:bg-blue-500/20; } }
+        @layer components {
+            .glass-panel { @apply bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-[0_4px_20px_rgba(0,0,0,0.03)]; }
+            .drop-zone { @apply border-2 border-dashed border-slate-300 bg-slate-50/50 rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 ease-out hover:border-blue-400 hover:bg-blue-50/50 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(59,130,246,0.08)]; }
+            .drop-zone.dragover { @apply border-blue-500 bg-blue-50 shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]; }
+            .eyebrow { @apply text-[10px] font-bold text-slate-400 uppercase tracking-widest; }
+            .btn-primary { @apply bg-blue-600 text-white font-semibold py-3.5 px-8 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:bg-blue-700 hover:-translate-y-px hover:shadow-[0_6px_15px_rgba(59,130,246,0.2)] transition-all flex items-center justify-center gap-2 text-sm active:translate-y-[1px] active:shadow-inner cursor-pointer; }
+            .btn-secondary { @apply bg-white border border-slate-200 text-slate-700 font-semibold py-3.5 px-8 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-px hover:shadow-sm transition-all flex items-center justify-center gap-2 text-sm active:translate-y-[1px] cursor-pointer; }
+            .checklist-container { @apply flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8; }
+            .checklist-item { @apply flex gap-5 p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors items-start; }
+            .step-circle { @apply flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-200 shadow-sm; }
+            .step-circle-warn { @apply bg-orange-100 text-orange-600 border-orange-200; }
+            details.report-category { @apply bg-white border border-slate-200 rounded-xl mb-4 overflow-hidden transition-all duration-300 shadow-sm; }
+            details.report-category summary { @apply bg-slate-50/90 backdrop-blur p-5 font-bold text-slate-900 text-sm cursor-pointer outline-none hover:bg-slate-100/90 transition-colors select-none flex items-center gap-3 border-b border-transparent; }
+            details.report-category summary::-webkit-details-marker { @apply hidden; }
+            details.report-category[open] > summary { @apply border-slate-200 sticky top-0 z-10; }
+            .keycap { @apply bg-gradient-to-b from-white to-slate-50 border-slate-300 border-b-[3px] border-l border-r border-t rounded-md shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-slate-700 font-mono font-semibold px-2.5 py-1 inline-block text-[11px] cursor-default select-none; }
+            .keycap-composite { @apply border-orange-300 from-orange-50 to-orange-100 text-orange-800; }
+            .keycap-layer { @apply border-purple-300 from-purple-50 to-purple-100 text-purple-800; }
+            .keycap-blank { @apply border-slate-200 from-slate-100 to-slate-200 text-slate-400 shadow-none; }
+        }
+    </style>
+</head>
+<body class="p-0 sm:p-8 flex flex-col items-center justify-start sm:justify-center min-h-screen">
+
+<div id="css-warning" style="display: none;">
+    <strong>⚠️ Design Engine Blocked:</strong> Your browser or adblocker is preventing the CSS styling engine from loading. Please disable your shields/adblocker for this local file and refresh the page.
+</div>
+
+<div class="max-w-4xl w-full mx-auto flex flex-col gap-6 p-4 sm:p-0" id="appContainer">
+    <div id="uploadScreen" class="w-full">
+        <header class="mb-6 text-center mt-6">
+            <img src="logo_small.png" alt="VoyaGo Logo" class="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-sm">
+            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
+                VoyaGo
+            </h2>
+            <p class="text-slate-500 text-lg max-w-xl mx-auto leading-relaxed text-balance">
+                Upload your ZSA Voyager, Moonlander, or ErgoDox layout, and we'll seamlessly convert everything we can for ZMK.
+            </p>
+        </header>
+        
+        <main class="glass-panel relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-50/50 blur-3xl pointer-events-none"></div>
+            <input type="file" id="fileInput" accept=".zip,.c,.txt" class="sr-only">
+            
+            <div class="drop-zone group relative z-10" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="flex flex-col items-center justify-center space-y-4">
+                    <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-blue-300 group-hover:text-blue-500 transition-colors">
+                        <svg class="w-8 h-8 text-slate-400 group-hover:text-blue-500 transition-colors" id="dropIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-lg font-bold text-slate-800" id="dropText">Click to upload your Oryx .zip file</div>
+                        <div class="text-sm text-slate-500 mt-1" id="dropSubtext">Or drag and drop it here</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-center relative z-10">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 flex items-start gap-4 max-w-2xl text-left shadow-sm">
+                    <div class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <strong class="text-slate-900 block text-sm mb-1">Make sure you have your ZSA Oryx Layout Source!</strong>
+                        <p class="text-[13px] text-slate-500 leading-relaxed">
+                            In ZSA Oryx, look just below the main "Save to my keyboard" button at the bottom of the screen and click the <strong class="text-slate-700">Download Source</strong> link to get the required file.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="successScreen" class="w-full hidden flex-col gap-6">
+        <div class="text-center mb-4 mt-6 no-print" id="successHeader">
+            <h3 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight flex justify-center items-center gap-3 mb-4">
+                <span class="text-4xl drop-shadow-sm">🎉</span> Layout Successfully Migrated!
+            </h3>
+            
+            <div id="boardDetection" class="text-[13px] font-bold text-blue-700 mb-4 bg-blue-50/80 py-2.5 px-5 rounded-full inline-block border border-blue-200 shadow-sm uppercase tracking-wider"></div>
+            
+            <p class="text-slate-500 text-lg max-w-2xl mx-auto mt-2">Follow the instructions below to get the layout on your new keyboard.</p>
+        </div>
+
+        <main class="glass-panel" id="mainResultsPanel">
+            <div class="flex flex-col sm:flex-row gap-4 mb-8 no-print p-6 bg-blue-50/50 rounded-2xl border border-blue-100 justify-end items-center" id="actionHeader">
+                <button onclick="window.UI.printPDF()" class="btn-secondary w-full sm:w-auto">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Create PDF Instructions
+                </button>
+                <button onclick="window.App.download()" class="btn-primary w-full sm:w-auto">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Download Layout
+                </button>
+            </div>
+            <div id="outputReport"></div>
+        </main>
+        <textarea id="outputJson" class="sr-only" aria-hidden="true"></textarea>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('load', () => {
+        if (!document.querySelector('style[data-tailwindcss]') && !window.tailwind) {
+            document.getElementById('css-warning').style.display = 'block';
+        }
+    });
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
