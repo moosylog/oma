@@ -93,7 +93,7 @@ const Parser = {
         return uniqueConfigs.length > 0 ? uniqueConfigs.join('\n\n// ------------------------------------\n\n') : null;
     },
 
-    parseOryxCombos: (cCode, layer0Nodes, state) => {
+    parseOryxCombos: (cCode, layer0Nodes, state, activeBoard) => {
         const comboDefs = {}; const combos = [];
         const comboArrayRegex = /const\s+uint16_t\s+(?:PROGMEM\s+)?([a-zA-Z0-9_]+)\[\]\s*=\s*\{([\s\S]*?)\};/g;
         let cMatch;
@@ -348,18 +348,41 @@ const Parser = {
 const BOARD_CONFIGS = {
     "LAYOUT_voyager": {
         name: "Voyager", targetBoard: "Go60", targetKeyCount: 60, isVoyager: true,
-        sourceRightOffset: 26, targetRightOffset: 30, // Go60 right hand index starts at 30
         templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Go60_default.json"
     },
     "LAYOUT_moonlander": {
         name: "Moonlander", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
-        sourceRightOffset: 36, targetRightOffset: 40, // Glove80 right hand index starts at 40
-        templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json"
+        templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json",
+        // EXPLICIT MAP: Maps Moonlander index [i] to Glove80 index [matrixMap[i]]
+        // Note: -1 means the Moonlander key is dropped (since Glove80 has 1 fewer column)
+        matrixMap: [
+            /* LEFT HAND (0-35) */
+            5, 6, 7, 8, 9, 10, 4,       // Row 1 -> Mapped to Glove80 Row 2
+            11, 12, 13, 14, 15, 16, -1, // Row 2 -> Mapped to Glove80 Row 3 (Outer pinky dropped)
+            17, 18, 19, 20, 21, 22, -1, // Row 3 -> Mapped to Glove80 Row 4
+            23, 24, 25, 26, 27, 28, -1, // Row 4 -> Mapped to Glove80 Row 5
+            29, 30, 31, 32, 33,         // Row 5 -> Mapped to Glove80 Row 6
+            37, 38, 39,                 // Thumbs -> Mapped to Glove80 Left Thumbs
+
+            /* RIGHT HAND (36-71) */
+            40, 45, 46, 47, 48, 49, 50, // Row 1
+            -1, 51, 52, 53, 54, 55, 56, // Row 2
+            -1, 57, 58, 59, 60, 61, 62, // Row 3
+            -1, 63, 64, 65, 66, 67, 68, // Row 4
+            69, 70, 71, 72, 73,         // Row 5
+            74, 75, 76                  // Thumbs -> Mapped to Glove80 Right Thumbs
+        ]
     },
     "LAYOUT_ergodox": {
         name: "ErgoDox", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
-        sourceRightOffset: 38, targetRightOffset: 40, // ErgoDox 76-keys, Glove80 targets 40
-        templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json"
+        templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json",
+        // Basic map for Ergodox. Your engineer can tune these arrays exactly as needed!
+        matrixMap: [
+            0,1,2,3,4,5,6, 11,12,13,14,15,16,10, 17,18,19,20,21,22,-1, 23,24,25,26,27,28,-1, 29,30,31,32,33,
+            34,35, 36,37,38, 39,
+            40,41,42,43,44,45,46, 47,51,52,53,54,55,56, -1,57,58,59,60,61,62, -1,63,64,65,66,67,68, 69,70,71,72,73,
+            74,75, 76,77,78, 79
+        ]
     }
 };
 
@@ -471,11 +494,12 @@ self.onmessage = async function(e) {
                 return astKey;
             });
             
-            // >>> NEW DYNAMIC MATRIX MAPPING LOGIC <<<
+            // >>> THE EXPLICIT MAPPING FIX <<<
             let mapped = new Array(activeBoard.targetKeyCount).fill(null).map(() => ({ value: "&trans" }));
             
             astKeys.forEach((key, i) => {
                 if (!key) return;
+                
                 let targetIdx = i;
 
                 if (activeBoard.name === "Voyager") {
@@ -485,23 +509,12 @@ self.onmessage = async function(e) {
                     else if (i === 49) targetIdx = 51;
                     else if (i === 50) targetIdx = 54;
                     else if (i === 51) targetIdx = 55;
-                } else {
-                    // Dynamic math for Moonlander & Ergodox to Glove80
-                    let offset = activeBoard.sourceRightOffset || (astKeys.length / 2);
-                    
-                    if (i < offset) {
-                        targetIdx = i; // Left hand
-                        // Moonlander specific left thumb shift into Glove80 cluster
-                        if (activeBoard.name === "Moonlander" && i >= 32 && i <= 35) targetIdx = 52 + (i - 32);
-                    } else {
-                        let localRight = i - offset;
-                        targetIdx = activeBoard.targetRightOffset + localRight; // Right hand shifted correctly!
-                        // Moonlander specific right thumb shift into Glove80 cluster
-                        if (activeBoard.name === "Moonlander" && localRight >= 32 && localRight <= 35) targetIdx = 69 + (localRight - 32);
-                    }
+                } else if (activeBoard.matrixMap) {
+                    // Pull the exact, explicit mapping index
+                    targetIdx = activeBoard.matrixMap[i];
                 }
 
-                if (targetIdx >= 0 && targetIdx < activeBoard.targetKeyCount) {
+                if (targetIdx !== undefined && targetIdx >= 0 && targetIdx < activeBoard.targetKeyCount) {
                     mapped[targetIdx] = key;
                 }
             });
@@ -509,7 +522,7 @@ self.onmessage = async function(e) {
             return mapped;
         });
 
-        const generatedCombos = Parser.parseOryxCombos(cleanText, astLayers[0] || [], state);
+        const generatedCombos = Parser.parseOryxCombos(cleanText, astLayers[0] || [], state, activeBoard);
 
         let templateJson;
         try {
