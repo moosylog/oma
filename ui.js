@@ -4,6 +4,7 @@ const MainUtils = {
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
     },
     
+    // Generic QMK Macro Parser
     translateQMKMacro: (code) => {
         if (!code) return "Rebuild as a Custom ZMK Macro.";
         
@@ -166,6 +167,7 @@ export const UI = {
                 let foundConfig = '';
 
                 if (data.contexts && data.contexts.length > 0) {
+                    
                     let occurrencesMap = new Map();
                     data.contexts.forEach(c => {
                         if (!c) return;
@@ -178,10 +180,8 @@ export const UI = {
                     });
 
                     let occurrencesStr = Array.from(occurrencesMap.values()).join('<br>');
-                    
-                    // Grab the extracted config (Tap Dance logic, Custom Macro logic, etc)
-                    foundConfig = data.contexts.find(c => c && c.config)?.config || '';
-                    
+                    foundConfig = data.contexts.find(c => c && c.config)?.config;
+
                     if (occurrencesStr) {
                         contextHtml = `
                             <div class="mt-5 pt-4 border-t border-slate-200/60">
@@ -192,10 +192,15 @@ export const UI = {
                     }
                 }
 
-                // >>> NEW: Merge original string and found configuration nicely! <<<
-                let codeDisplay = original;
+                // >>> NEW: Sleek, separated parameter box <<<
+                let configDisplay = '';
                 if (foundConfig) {
-                    codeDisplay += `\n\n// --- Extracted Parameters / Definition ---\n${foundConfig}`;
+                    configDisplay = `
+                        <div class="border-t border-slate-700 bg-slate-900/50 p-3">
+                            <strong class="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">Extracted Parameters / Definition</strong>
+                            <code class="block w-full text-blue-300 text-[11px] font-mono whitespace-pre-wrap overflow-x-auto">${MainUtils.escapeHTML(foundConfig)}</code>
+                        </div>
+                    `;
                 }
 
                 return `
@@ -213,8 +218,11 @@ export const UI = {
                             <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${MainUtils.escapeHTML(data.reason)}</p>
                         </div>
                         <div>
-                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Exact Source Code & Parameters</strong>
-                            <code class="block w-full p-3 bg-slate-800 text-emerald-400 rounded-lg text-xs font-mono whitespace-pre-wrap shadow-inner overflow-x-auto">${MainUtils.escapeHTML(codeDisplay)}</code>
+                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Exact Source Code</strong>
+                            <div class="rounded-lg overflow-hidden shadow-inner bg-slate-800 border border-slate-700">
+                                <code class="block w-full p-3 text-emerald-400 text-xs font-mono break-all">${MainUtils.escapeHTML(original)}</code>
+                                ${configDisplay}
+                            </div>
                         </div>
                         ${contextHtml}
                     </div>
