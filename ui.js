@@ -8,8 +8,14 @@ const MainUtils = {
     translateQMKMacro: (code) => {
         if (!code) return "Rebuild as a Custom ZMK Macro.";
         
+        // 1. Prevent "Double Content" by completely ignoring the boilerplate _reset functions!
+        let codeToParse = code;
+        if (codeToParse.includes('_reset')) {
+            codeToParse = codeToParse.split(/void\s+[a-zA-Z0-9_]+_reset/)[0];
+        }
+        
         let htmlOutput = "";
-        let cleanCode = code.replace(/if\s*\(.*?\)\s*\{/g, '').replace(/\}/g, '').replace(/break;/g, '').replace(/case ST_MACRO_.*?:/g, '').trim();
+        let cleanCode = codeToParse.replace(/if\s*\(.*?\)\s*\{/g, '').replace(/\}/g, '').replace(/break;/g, '').replace(/case ST_MACRO_.*?:/g, '').trim();
 
         const sendStringRegex = /SEND_STRING\(([\s\S]*?)\);/g;
         let match;
@@ -40,7 +46,8 @@ const MainUtils = {
             htmlOutput += `<div class="flex items-center flex-wrap gap-y-2 leading-relaxed mb-2">${parsedStr}</div>`;
         }
 
-        const codeRegex = /(tap_code16|register_code16|unregister_code16|tap_code|register_code|unregister_code)\((.*?)\);/g;
+        // 2. We skip "unregister_code" so we don't spam the user with redundant release steps
+        const codeRegex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\);/g;
         let tapSteps = [];
         while ((match = codeRegex.exec(cleanCode)) !== null) {
             hasContent = true;
@@ -50,16 +57,23 @@ const MainUtils = {
             
             if (action.includes('tap')) tapSteps.push(`Tap ${htmlKey}`);
             else if (action.includes('register')) tapSteps.push(`Hold ${htmlKey}`);
-            else if (action.includes('unregister')) tapSteps.push(`Release ${htmlKey}`);
         }
+        
+        // De-duplicate identical sequential steps to keep it perfectly clean
+        let uniqueSteps = [];
+        tapSteps.forEach(step => {
+            if (uniqueSteps[uniqueSteps.length - 1] !== step) {
+                uniqueSteps.push(step);
+            }
+        });
 
-        if (tapSteps.length > 0) {
-            htmlOutput += `<div class="flex items-center flex-wrap gap-2 mt-2">${tapSteps.join('<span class="text-slate-300 text-[10px]">➔</span>')}</div>`;
+        if (uniqueSteps.length > 0) {
+            htmlOutput += `<div class="flex items-center flex-wrap gap-2 mt-2">${uniqueSteps.join('<span class="text-slate-300 text-[10px]">➔</span>')}</div>`;
         }
 
         if (hasContent) {
             return `
-                <strong class="block text-slate-800 text-xs mb-2">Macro Sequence:</strong>
+                <strong class="block text-slate-800 text-xs mb-2">Decoded Sequence:</strong>
                 ${htmlOutput}
                 <p class="text-[11px] text-slate-500 mt-2 border-t border-slate-100 pt-2">Recreate this using the "Macro" tab in the MoErgo Editor.</p>
             `;
@@ -167,7 +181,6 @@ export const UI = {
                 let foundConfig = '';
 
                 if (data.contexts && data.contexts.length > 0) {
-                    
                     let occurrencesMap = new Map();
                     data.contexts.forEach(c => {
                         if (!c) return;
@@ -192,15 +205,13 @@ export const UI = {
                     }
                 }
 
-                // >>> NEW: Generate the Abstraction Description if we found a config <<<
+                // Generate the Decoded Instructions
                 let abstractionHTML = '';
                 if (foundConfig) {
                     let decoded = MainUtils.translateQMKMacro(foundConfig);
-                    // Only show it if it successfully decoded something meaningful
                     if (decoded !== "Rebuild as a Custom ZMK Macro.") {
                         abstractionHTML = `
                             <div class="mb-4">
-                                <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Decoded Instructions</strong>
                                 <div class="p-3 bg-indigo-50/40 border border-indigo-100 rounded-lg shadow-sm">
                                     ${decoded}
                                 </div>
@@ -209,12 +220,17 @@ export const UI = {
                     }
                 }
 
+                // Cleanup the raw Config code so we don't show the duplicate _reset function
                 let configDisplay = '';
                 if (foundConfig) {
+                    let displayConfig = foundConfig;
+                    if (displayConfig.includes('_reset')) {
+                        displayConfig = displayConfig.split(/void\s+[a-zA-Z0-9_]+_reset/)[0].trim() + "\n\n// (The cleanup/reset function is hidden for clarity)";
+                    }
                     configDisplay = `
                         <div class="border-t border-slate-700 bg-slate-900/50 p-3">
                             <strong class="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">Extracted Parameters / Definition</strong>
-                            <code class="block w-full text-blue-300 text-[11px] font-mono whitespace-pre-wrap overflow-x-auto">${MainUtils.escapeHTML(foundConfig)}</code>
+                            <code class="block w-full text-blue-300 text-[11px] font-mono whitespace-pre-wrap overflow-x-auto">${MainUtils.escapeHTML(displayConfig)}</code>
                         </div>
                     `;
                 }
