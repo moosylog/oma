@@ -361,67 +361,69 @@ const BOARD_CONFIGS = {
         // Note: -1 means the Moonlander's inner 7th column key is dropped.
     // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
         // Note: -1 means the Moonlander's inner 7th column key is dropped.
+      // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
+        // Note: The inner 7th column keys are now "parked" on the top Function row!
         matrixMap: [
             /* ================================================= */
             /* ROW 1: Numbers                                    */
             /* ================================================= */
             
             // Left Row 1 -> Glove80 Left Nums (Indices 10-15)
-            10, 11, 12, 13, 14, 15, -1, // Moonlander indices 0-6
+            10, 11, 12, 13, 14, 15, 0,  // (Inner key parked at Glove80 index 0)
             
             // Right Row 1 -> Glove80 Right Nums (Indices 16-21)
-            -1, 16, 17, 18, 19, 20, 21, // Moonlander indices 7-13
+            5, 16, 17, 18, 19, 20, 21,  // (Inner key parked at Glove80 index 5)
 
             /* ================================================= */
             /* ROW 2: Top (QWERTY)                               */
             /* ================================================= */
             
             // Left Row 2 -> Glove80 Left Top (Indices 22-27)
-            22, 23, 24, 25, 26, 27, -1, // Moonlander indices 14-20
+            22, 23, 24, 25, 26, 27, 1,  // (Inner key parked at Glove80 index 1)
             
             // Right Row 2 -> Glove80 Right Top (Indices 28-33)
-            -1, 28, 29, 30, 31, 32, 33, // Moonlander indices 21-27
+            6, 28, 29, 30, 31, 32, 33,  // (Inner key parked at Glove80 index 6)
 
             /* ================================================= */
             /* ROW 3: Home (ASDF)                                */
             /* ================================================= */
             
             // Left Row 3 -> Glove80 Left Home (Indices 34-39)
-            34, 35, 36, 37, 38, 39, -1, // Moonlander indices 28-34
+            34, 35, 36, 37, 38, 39, 2,  // (Inner key parked at Glove80 index 2)
             
             // Right Row 3 -> Glove80 Right Home (Indices 40-45)
-            -1, 40, 41, 42, 43, 44, 45, // Moonlander indices 35-41
+            7, 40, 41, 42, 43, 44, 45,  // (Inner key parked at Glove80 index 7)
 
             /* ================================================= */
             /* ROW 4: Bottom (ZXCV / NM<>)                       */
             /* ================================================= */
             
             // Left Row 4 -> Glove80 Left Bottom (Indices 46-51)
-            46, 47, 48, 49, 50, 51, -1, // Moonlander indices 42-48
+            46, 47, 48, 49, 50, 51, 3,  // (Inner key parked at Glove80 index 3)
             
             // Right Row 4 -> Glove80 Right Bottom (Indices 58-63)
-            -1, 58, 59, 60, 61, 62, 63, // Moonlander indices 49-55  <-- FIXED!
+            8, 58, 59, 60, 61, 62, 63,  // (Inner key parked at Glove80 index 8)
 
             /* ================================================= */
             /* ROW 5: Bottom Modifiers                           */
             /* ================================================= */
             
             // Left Row 5 -> Glove80 Left Modifiers (Indices 64-68)
-            64, 65, 66, 67, 68,         // Moonlander indices 56-60
+            64, 65, 66, 67, 68,         
             
             // Right Row 5 -> Glove80 Right Modifiers (Indices 75-79)
-            75, 76, 77, 78, 79,         // Moonlander indices 61-65
+            75, 76, 77, 78, 79,         
 
             /* ================================================= */
             /* THUMB CLUSTERS                                    */
             /* ================================================= */
             
             // Left Thumbs -> Glove80 Left Thumbs Bot (Indices 69-71)
-            69, 70, 71,                 // Moonlander indices 66-68
+            69, 70, 71,                 
             
             // Right Thumbs -> Glove80 Right Thumbs Bot (Indices 72-74)
-            72, 73, 74                  // Moonlander indices 69-71
-        ]    
+            72, 73, 74                  
+        ]
     },
     "LAYOUT_ergodox": {
         name: "ErgoDox", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
