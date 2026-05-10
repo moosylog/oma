@@ -363,67 +363,70 @@ const BOARD_CONFIGS = {
         // Note: -1 means the Moonlander's inner 7th column key is dropped.
       // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
         // Note: The inner 7th column keys are now "parked" on the top Function row!
+    // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
         matrixMap: [
             /* ================================================= */
-            /* ROW 1: Numbers                                    */
+            /* ROW 1: Numbers (7 keys per side)                  */
             /* ================================================= */
             
-            // Left Row 1 -> Glove80 Left Nums (Indices 10-15)
-            10, 11, 12, 13, 14, 15, 0,  // (Inner key parked at Glove80 index 0)
+            // Left Row 1 -> Glove80 Left Nums 
+            10, 11, 12, 13, 14, 15, 0,  // (Inner key parked at index 0)
             
-            // Right Row 1 -> Glove80 Right Nums (Indices 16-21)
-            5, 16, 17, 18, 19, 20, 21,  // (Inner key parked at Glove80 index 5)
+            // Right Row 1 -> Glove80 Right Nums 
+            5, 16, 17, 18, 19, 20, 21,  // (Inner key parked at index 5)
 
             /* ================================================= */
-            /* ROW 2: Top (QWERTY)                               */
+            /* ROW 2: Top / QWERTY (7 keys per side)             */
             /* ================================================= */
             
-            // Left Row 2 -> Glove80 Left Top (Indices 22-27)
-            22, 23, 24, 25, 26, 27, 1,  // (Inner key parked at Glove80 index 1)
+            // Left Row 2 -> Glove80 Left Top 
+            22, 23, 24, 25, 26, 27, 1,  // (Inner key parked at index 1)
             
-            // Right Row 2 -> Glove80 Right Top (Indices 28-33)
-            6, 28, 29, 30, 31, 32, 33,  // (Inner key parked at Glove80 index 6)
+            // Right Row 2 -> Glove80 Right Top 
+            6, 28, 29, 30, 31, 32, 33,  // (Inner key parked at index 6)
 
             /* ================================================= */
-            /* ROW 3: Home (ASDF)                                */
+            /* ROW 3: Home / ASDF (7 keys per side)              */
             /* ================================================= */
             
-            // Left Row 3 -> Glove80 Left Home (Indices 34-39)
-            34, 35, 36, 37, 38, 39, 2,  // (Inner key parked at Glove80 index 2)
+            // Left Row 3 -> Glove80 Left Home 
+            34, 35, 36, 37, 38, 39, 2,  // (Inner key parked at index 2)
             
-            // Right Row 3 -> Glove80 Right Home (Indices 40-45)
-            7, 40, 41, 42, 43, 44, 45,  // (Inner key parked at Glove80 index 7)
+            // Right Row 3 -> Glove80 Right Home 
+            7, 40, 41, 42, 43, 44, 45,  // (Inner key parked at index 7)
 
             /* ================================================= */
-            /* ROW 4: Bottom (ZXCV / NM<>)                       */
+            /* ROW 4: Bottom / ZXCV (6 KEYS PER SIDE!)           */
             /* ================================================= */
             
-            // Left Row 4 -> Glove80 Left Bottom (Indices 46-51)
-            46, 47, 48, 49, 50, 51, 3,  // (Inner key parked at Glove80 index 3)
+            // Left Row 4 -> Glove80 Left Bottom 
+            46, 47, 48, 49, 50, 51,     // Moonlander indices 42-47
             
-            // Right Row 4 -> Glove80 Right Bottom (Indices 58-63)
-            8, 58, 59, 60, 61, 62, 63,  // (Inner key parked at Glove80 index 8)
+            // Right Row 4 -> Glove80 Right Bottom 
+            58, 59, 60, 61, 62, 63,     // Moonlander indices 48-53 (N is 58, M is 59!)
 
             /* ================================================= */
-            /* ROW 5: Bottom Modifiers                           */
+            /* ROW 5: Bottom Modifiers (5 keys per side)         */
             /* ================================================= */
             
-            // Left Row 5 -> Glove80 Left Modifiers (Indices 64-68)
+            // Left Modifiers
+            52, 53, 54, 55, 56,         
+            
+            // Right Modifiers
             64, 65, 66, 67, 68,         
-            
-            // Right Row 5 -> Glove80 Right Modifiers (Indices 75-79)
-            75, 76, 77, 78, 79,         
 
             /* ================================================= */
-            /* THUMB CLUSTERS                                    */
+            /* THUMB CLUSTERS (4 keys per side)                  */
             /* ================================================= */
             
-            // Left Thumbs -> Glove80 Left Thumbs Bot (Indices 69-71)
-            69, 70, 71,                 
+            // Left Thumbs -> Glove80 Left Thumbs 
+            69, 70, 71, 3,              // (4th thumb key parked safely at index 3)
             
-            // Right Thumbs -> Glove80 Right Thumbs Bot (Indices 72-74)
-            72, 73, 74                  
-        ]
+            // Right Thumbs -> Glove80 Right Thumbs 
+            72, 73, 74, 8               // (4th thumb key parked safely at index 8)
+        ]   
+    
+    
     },
     "LAYOUT_ergodox": {
         name: "ErgoDox", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
