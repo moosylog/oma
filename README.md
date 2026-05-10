@@ -1,73 +1,72 @@
 <sup> AI generated</sup>
 
 <div align="center">
-  <img src="logo_small.png" alt="VoyaGo Logo" width="120" style="margin-bottom: 20px;">
+  <img src="logo_small.png" alt="OMA Logo" width="120" style="margin-bottom: 20px;">
 
-  # VoyaGo
+  # OMA
+  ### **Oryx Migration Assistant**
 
-  **The One-Click Layout Migration Tool: ZSA Voyager ➔ MoErgo Go60**
+  **The One-Click Migration Path: ZSA Oryx ➔ MoErgo Layout Editor**
 
-[![Launch VoyaGo](https://img.shields.io/badge/Launch_VoyaGo_App-2563EB?style=for-the-badge&logo=rocket&logoColor=white)](https://moosylog.github.io/voyago/)
+[![Launch OMA App](https://img.shields.io/badge/Launch_OMA_Assistant-2563EB?style=for-the-badge&logo=rocket&logoColor=white)](https://moosylog.github.io/voyago/)
   <br>
 </div>
-You’ve made the exciting choice to upgrade from the 52-key ZSA Voyager to the next generation of ergonomic typing: the MoErgo Go60. 
-Getting a new keyboard is a thrill, but we know how much time you’ve spent in ZSA Oryx meticulously crafting your perfect layers, combos, and hold-taps. Instead of starting over in a completely new firmware ecosystem (ZMK), VoyaGo is here to help you with the migration. We’ll help you carry over the familiar layout you’re already used to, so you can feel right at home on your new board from day one.
----
-<br>
-<br>
 
-## ✨ The Advantage
+You’ve made the exciting choice to upgrade your ergonomic typing setup. Whether you are moving from a **Voyager** to a **Go60** or a **Moonlander** to a **Glove80**, getting a new keyboard is a thrill—but losing the custom layout you spent months perfecting isn't.
 
-Moving from QMK (Oryx) to ZMK (MoErgo) involves navigating two completely different architectures. VoyaGo bridges that gap instantly:
-
-* **Intelligent Layer Splicing:** The Voyager has 52 keys; the Go60 has 60 (including touchpad). VoyaGo precisely overlays your 52 keys onto the Go60 template, padding the empty spaces with transparent (`&trans`) keys so MoErgo's default touchpad.
-* **Deep AST Modifier Translation:** ZMK strictly enforces Abstract Syntax Trees for nested keys. VoyaGo mathematically unwraps your QMK macros (like `MOD_HYPR` or `LGUI(LSFT(KC_A))`) and compiles them into valid, deeply nested ZMK JSON arrays.
-* **Per-Key RGB Preservation:** Don't lose your lighting! VoyaGo rips the hidden `HSV` color matrix out of the ZSA source code, calculates the math, and injects exact HEX codes into your Go60 layout.
-* **Auto-Generated Combos:** Migrates your complex multi-key combos perfectly, calculating the exact ZMK matrix positions required for the Go60's physical layout.
-* **The "Action Required" Report:** ZSA uses proprietary, closed-source C code for things like Auto-Mouse, and Siri macros that don't translate 1:1 into standard ZMK. VoyaGo catches these dealbreakers, safely leaves the key blank, and generates a printable UI report detailing exactly *what* the feature was, *where* it lived, and *how* to rebuild it.
+Instead of starting over in a new firmware ecosystem (ZMK), **OMA** acts as your personal assistant. We handle the heavy lifting of translating your ZSA Oryx code so that your layers, combos, and lighting feel right at home on your new MoErgo board from day one.
 
 ---
 
-## 📖 How to Use VoyaGo
+## ✨ The OMA Advantage
 
-VoyaGo does everything locally in your browser for maximum privacy and lightning-fast speed. No server uploads are required.
+OMA bridges the gap between QMK (Oryx) and ZMK (MoErgo) architectures instantly, handled locally in your browser:
 
-1. **Get Your Source:** Open your layout in ZSA Oryx, click the `< >` icon, and select **Download Source** *(Do not click the main Download Firmware button)*.
-2. **Drop it in VoyaGo:** Drag and drop the downloaded `.zip` (or the `keymap.c` file) into the VoyaGo drop zone.
-3. **Review the Report:** VoyaGo processes the C-code in milliseconds. Review the UI to see how many standard keys, modifiers, and combos were successfully ported.
-4. **Download & Import:** Click **Download Layout** to get your newly minted `_Appended.json` file, and drag it directly into the [MoErgo Layout Editor](https://layout.moergo.com).
+* **Hardware Mapping:** OMA intelligently overlays your ZSA keys onto the MoErgo template. It pads the empty spaces with transparent keys so MoErgo's native hardware (like the Go60 touchpad) remains fully functional.
+* **Smart Board Support:** * **ZSA Voyager ➔ MoErgo Go60** (52 keys mapped to 60)
+    * **ZSA Moonlander ➔ MoErgo Glove80** (72 keys mapped to 80)
+* **The "Universal Switch":** Once OMA moves your layout into the MoErgo Layout Editor, you can use MoErgo's native tools to convert between the Go60 and Glove80 effortlessly.
+* **Deep Translation:** OMA "unwraps" complex QMK macros (like `LSFT(KC_A)` or `MOD_MEH`) and compiles them into valid, deeply nested ZMK JSON arrays automatically.
+* **RGB & Color Preservation:** OMA extracts the hidden color matrix from your source code, converts the math, and injects your exact custom colors into the new layout.
+* **The "Assistant" Report:** Proprietary features that don't have a 1:1 translation (like Mouse Jiggler or Siri macros) are caught and flagged. OMA generates a friendly, printable report explaining exactly *what* those keys were and *how* to rebuild them in the MoErgo editor.
+
+---
+
+## 📖 How to Use OMA
+
+OMA is designed for simplicity. No technical knowledge or server uploads are required.
+
+1. **Get Your Source:** In ZSA Oryx, look for the `< >` icon and select **Download Source**. *(Important: Do not click the main "Download Firmware" button).*
+2. **Drop it in OMA:** Drag and drop the downloaded `.zip` file into the OMA drop zone.
+3. **Review the Report:** OMA processes your layout in milliseconds. Check the report to see which keys were auto-mapped and which require a quick manual touch-up.
+4. **Download & Import:** Click **Download Layout** to get your `.json` file, and drag it directly into the [MoErgo Layout Editor](https://layout.moergo.com).
 
 ---
 
 ## 🔍 Under the Hood: Conversion Matrix
 
-Moving layouts across firmware ecosystems is notoriously difficult. Here is exactly what VoyaGo handles automatically, and what requires a quick manual touch-up in the MoErgo Layout Editor.
-
-| Feature | Translation Status | Notes |
+| Feature | Status | Notes |
 | :--- | :--- | :--- |
-| **Alphas, Numbers, & Symbols** | ✅ 100% Automated | 1:1 mapping to ZMK standard keycodes. |
-| **F-Keys, Numpad, & Nav** | ✅ 100% Automated | 1:1 mapping to ZMK standard keycodes. |
-| **Combos (Chords)** | ✅ 100% Automated | Extracts key combinations, recalculates the geometry for the Go60 matrix, and assigns the correct layer math. |
-| **Hold-Taps (`LT`, `MT`)** | ✅ 100% Automated | Deeply nested modifiers safely parsed and translated to ZMK format. |
-| **Layer Toggles (`MO`, `TG`, `TO`)** | ✅ 100% Automated | Layer integers are dynamically shifted to append safely below the Go60 base layers. |
-| **Sticky Keys / One-Shot (`OSM`)** | ✅ 100% Automated | Unwrapped and natively converted to ZMK `&sk`. |
-| **Native Mouse Keys** | ✅ 100% Automated | Safely mapped to MoErgo `LCLK`, `RCLK`, `MCLK`, and scroll/move keys (`&mmv` / `&msc`). |
-| **Media & System Controls** | ✅ 100% Automated | Volume, display brightness, and playback keys flawlessly mapped. |
-| **Hardware Controls (BT, Reset)** | ✅ 100% Automated | Maps Bluetooth clearing, Bootloader, and Sys Reset commands safely. |
-| **Caps Word (`CW_TOGG`)** | ✅ 100% Automated | Cleanly converted to ZMK `&caps_word`. |
-| **RGB Lighting Controls** | ✅ 100% Automated | Standard toggles and hue/saturation/brightness mapped to `&rgb_ug`. |
-| **Custom Layer Colors** | ✅ 100% Automated | ZSA's hidden HSV matrix is extracted, mathematically converted to HEX, and bound as JSON decorations. |
-| **Tap Dances (`TD`)** | ⚠️ Manual Action | Must be rebuilt in the Layout Editor using ZMK's native *Mod-Morph* or *Tap-Dance* behaviors. |
-| **Custom Macros (`ST_MACRO`)** | ⚠️ Manual Action | Multi-keystroke text macros must be rebuilt in the ZMK Macro editor. |
-| **Oryx "Magic" Keys** | ⚠️ Manual Action | "Mouse Jiggler", "Drag Scroll", and "Dynamic CPI" are proprietary ZSA C-code and must be replaced with native MoErgo features. |
+| **Alphas, Numbers, & Symbols** | ✅ 100% | 1:1 mapping to ZMK standard keycodes. |
+| **F-Keys, Numpad, & Nav** | ✅ 100% | 1:1 mapping to ZMK standard keycodes. |
+| **Combos (Chords)** | ✅ 100% | Recalculates matrix geometry for the new physical layout. |
+| **Hold-Taps (`LT`, `MT`)** | ✅ 100% | Deeply nested modifiers safely parsed and translated. |
+| **Layer Toggles (`MO`, `TG`, `TO`)** | ✅ 100% | Layer indices are dynamically shifted to append safely. |
+| **Sticky Keys (`OSM`)** | ✅ 100% | Natively converted to ZMK `&sk`. |
+| **Native Mouse Keys** | ✅ 100% | Mapped to MoErgo clicks, scroll, and movement. |
+| **Media & System Controls** | ✅ 100% | Volume, brightness, and playback keys flawlessly mapped. |
+| **Hardware Controls (BT, Reset)** | ✅ 100% | Maps Bluetooth, Bootloader, and Reset commands safely. |
+| **RGB Lighting & Colors** | ✅ 100% | Custom HSV colors converted to HEX and bound to layers. |
+| **Tap Dances (`TD`)** | ⚠️ Manual | Rebuild using MoErgo's *Mod-Morph* or *Tap-Dance* tools. |
+| **Custom Macros (`ST_MACRO`)** | ⚠️ Manual | Rebuild text macros in the ZMK Macro editor. |
+| **Oryx "Magic" Keys** | ⚠️ Manual | Proprietary C-code features (like Mouse Jiggler) must be replaced with native MoErgo features. |
 
 ---
 
 <div align="center">
-  <b>Stop re-typing layouts. Start typing.</b><br>
+  <b>Don't rewire your brain. Just move your layout.</b><br>
   Built with ⌨️ for the ergonomic community.
 </div>
-
 ---
 
 <sup> AI generated</sup>
