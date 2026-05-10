@@ -355,22 +355,52 @@ const BOARD_CONFIGS = {
         templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json",
         // EXPLICIT MAP: Maps Moonlander index [i] to Glove80 index [matrixMap[i]]
         // Note: -1 means the Moonlander key is dropped (since Glove80 has 1 fewer column)
+// EXPLICIT MAP: Maps Moonlander index [i] to Glove80 index [matrixMap[i]]
+        // Note: -1 means the Moonlander key is dropped.
         matrixMap: [
-            /* LEFT HAND (0-35) */
-            5, 6, 7, 8, 9, 10, 4,       // Row 1 -> Mapped to Glove80 Row 2
-            11, 12, 13, 14, 15, 16, -1, // Row 2 -> Mapped to Glove80 Row 3 (Outer pinky dropped)
-            17, 18, 19, 20, 21, 22, -1, // Row 3 -> Mapped to Glove80 Row 4
-            23, 24, 25, 26, 27, 28, -1, // Row 4 -> Mapped to Glove80 Row 5
-            29, 30, 31, 32, 33,         // Row 5 -> Mapped to Glove80 Row 6
-            37, 38, 39,                 // Thumbs -> Mapped to Glove80 Left Thumbs
+            /* ================================================= */
+            /* LEFT HAND (Moonlander Indices 0-35)               */
+            /* ================================================= */
+            
+            // ML Row 1 (Numbers) -> Glove80 Row 2 (Indices 10-15)
+            10, 11, 12, 13, 14, 15, -1, // Keys 0-6 (Drops the inner 7th key)
+            
+            // ML Row 2 (Top) -> Glove80 Row 3 (Indices 22-27)
+            22, 23, 24, 25, 26, 27, -1, // Keys 7-13
+            
+            // ML Row 3 (Home) -> Glove80 Row 4 (Indices 34-39)
+            34, 35, 36, 37, 38, 39, -1, // Keys 14-20
+            
+            // ML Row 4 (Bottom) -> Glove80 Row 5 (Indices 46-51)
+            46, 47, 48, 49, 50, 51, -1, // Keys 21-27
+            
+            // ML Row 5 (Modifiers) -> Glove80 Row 6 (Indices 58-62)
+            58, 59, 60, 61, 62,         // Keys 28-32
+            
+            // ML Thumbs -> Glove80 Left Thumbs (Indices 71, 72, 73)
+            71, 72, 73,                 // Keys 33-35 (Maps to bottom row of left thumb cluster)
 
-            /* RIGHT HAND (36-71) */
-            40, 45, 46, 47, 48, 49, 50, // Row 1
-            -1, 51, 52, 53, 54, 55, 56, // Row 2
-            -1, 57, 58, 59, 60, 61, 62, // Row 3
-            -1, 63, 64, 65, 66, 67, 68, // Row 4
-            69, 70, 71, 72, 73,         // Row 5
-            74, 75, 76                  // Thumbs -> Mapped to Glove80 Right Thumbs
+            /* ================================================= */
+            /* RIGHT HAND (Moonlander Indices 36-71)             */
+            /* ================================================= */
+            
+            // ML Row 1 (Numbers) -> Glove80 Row 2 (Indices 16-21)
+            -1, 16, 17, 18, 19, 20, 21, // Keys 36-42 (Drops the inner 7th key)
+            
+            // ML Row 2 (Top) -> Glove80 Row 3 (Indices 28-33)
+            -1, 28, 29, 30, 31, 32, 33, // Keys 43-49
+            
+            // ML Row 3 (Home) -> Glove80 Row 4 (Indices 40-45)
+            -1, 40, 41, 42, 43, 44, 45, // Keys 50-56
+            
+            // ML Row 4 (Bottom) -> Glove80 Row 5 (Indices 52-57)
+            -1, 52, 53, 54, 55, 56, 57, // Keys 57-63
+            
+            // ML Row 5 (Modifiers) -> Glove80 Row 6 (Indices 63-67)
+            63, 64, 65, 66, 67,         // Keys 64-68
+            
+            // ML Thumbs -> Glove80 Right Thumbs (Indices 74, 75, 76)
+            74, 75, 76                  // Keys 69-71 (Maps to bottom row of right thumb cluster)
         ]
     },
     "LAYOUT_ergodox": {
