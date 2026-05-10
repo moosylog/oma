@@ -398,7 +398,8 @@ const BOARD_CONFIGS = {
             46, 47, 48, 49, 50, 51, -1, // Moonlander indices 42-48
             
             // Right Row 4 -> Glove80 Right Bottom (Indices 52-57)
-            -1, 52, 53, 54, 55, 56, 57, // Moonlander indices 49-55
+         //   -1, 52, 53, 54, 55, 56, 57, // Moonlander indices 49-55
+              -1, 69, 70, 71, 72, 72, 73,  // Moonlander indices 49-55
 
             /* ================================================= */
             /* ROW 5: Bottom Modifiers                           */
