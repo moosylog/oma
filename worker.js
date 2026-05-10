@@ -364,67 +364,74 @@ const BOARD_CONFIGS = {
       // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
         // Note: The inner 7th column keys are now "parked" on the top Function row!
     // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
+// EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
         matrixMap: [
             /* ================================================= */
             /* ROW 1: Numbers (7 keys per side)                  */
             /* ================================================= */
             
             // Left Row 1 -> Glove80 Left Nums 
-            10, 11, 12, 13, 14, 15, 0,  // (Inner key parked at index 0)
+            10, 11, 12, 13, 14, 15, 0,  // (Inner key parked at top left)
             
             // Right Row 1 -> Glove80 Right Nums 
-            5, 16, 17, 18, 19, 20, 21,  // (Inner key parked at index 5)
+            5, 16, 17, 18, 19, 20, 21,  // (Inner key parked at top right)
 
             /* ================================================= */
             /* ROW 2: Top / QWERTY (7 keys per side)             */
             /* ================================================= */
             
             // Left Row 2 -> Glove80 Left Top 
-            22, 23, 24, 25, 26, 27, 1,  // (Inner key parked at index 1)
+            22, 23, 24, 25, 26, 27, 1,  
             
             // Right Row 2 -> Glove80 Right Top 
-            6, 28, 29, 30, 31, 32, 33,  // (Inner key parked at index 6)
+            6, 28, 29, 30, 31, 32, 33,  
 
             /* ================================================= */
             /* ROW 3: Home / ASDF (7 keys per side)              */
             /* ================================================= */
             
             // Left Row 3 -> Glove80 Left Home 
-            34, 35, 36, 37, 38, 39, 2,  // (Inner key parked at index 2)
+            34, 35, 36, 37, 38, 39, 2,  
             
             // Right Row 3 -> Glove80 Right Home 
-            7, 40, 41, 42, 43, 44, 45,  // (Inner key parked at index 7)
+            7, 40, 41, 42, 43, 44, 45,  
 
             /* ================================================= */
-            /* ROW 4: Bottom / ZXCV (6 KEYS PER SIDE!)           */
+            /* ROW 4: Bottom / ZXCV (6 KEYS PER SIDE)            */
             /* ================================================= */
             
             // Left Row 4 -> Glove80 Left Bottom 
-            46, 47, 48, 49, 50, 51,     // Moonlander indices 42-47
+            46, 47, 48, 49, 50, 51,     
             
             // Right Row 4 -> Glove80 Right Bottom 
-            58, 59, 60, 61, 62, 63,     // Moonlander indices 48-53 (N is 58, M is 59!)
+            58, 59, 60, 61, 62, 63,     
 
             /* ================================================= */
-            /* ROW 5: Bottom Modifiers (5 keys per side)         */
+            /* THE CHAOS ROW: Modifiers & Top Thumbs             */
             /* ================================================= */
             
-            // Left Modifiers
-            52, 53, 54, 55, 56,         
-            
-            // Right Modifiers
+            // 5 Left Modifiers -> Glove80 Left Bottom Edge (Magic Row)
             64, 65, 66, 67, 68,         
+            
+            // 1 Left Top Thumb -> Glove80 Left Thumb Cluster
+            55,                        
+            
+            // 1 Right Top Thumb -> Glove80 Right Thumb Cluster
+            72,                        
+            
+            // 5 Right Modifiers -> Glove80 Right Bottom Edge (Magic Row)
+            75, 76, 77, 78, 79,        
 
             /* ================================================= */
-            /* THUMB CLUSTERS (4 keys per side)                  */
+            /* THE MAIN THUMBS                                   */
             /* ================================================= */
             
-            // Left Thumbs -> Glove80 Left Thumbs 
-            69, 70, 71, 3,              // (4th thumb key parked safely at index 3)
+            // 3 Left Thumbs -> Glove80 Left Thumb Cluster
+            52, 53, 54,                
             
-            // Right Thumbs -> Glove80 Right Thumbs 
-            72, 73, 74, 8               // (4th thumb key parked safely at index 8)
-        ]   
+            // 3 Right Thumbs -> Glove80 Right Thumb Cluster
+            69, 70, 71                 
+        ]
     
     
     },
