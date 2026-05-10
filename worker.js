@@ -365,36 +365,37 @@ const BOARD_CONFIGS = {
         // Note: The inner 7th column keys are now "parked" on the top Function row!
     // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
 // EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
+// EXPLICIT MAP: Maps Moonlander interleaved C-array index [i] to Glove80 index
         matrixMap: [
             /* ================================================= */
             /* ROW 1: Numbers (7 keys per side)                  */
             /* ================================================= */
             
             // Left Row 1 -> Glove80 Left Nums 
-            10, 11, 12, 13, 14, 15, 0,  // (Inner key parked at top left)
+            10, 11, 12, 13, 14, 15, -1, // (Inner 1 safely dropped)
             
             // Right Row 1 -> Glove80 Right Nums 
-            5, 16, 17, 18, 19, 20, 21,  // (Inner key parked at top right)
+            -1, 16, 17, 18, 19, 20, 21, // (Inner 1 safely dropped)
 
             /* ================================================= */
             /* ROW 2: Top / QWERTY (7 keys per side)             */
             /* ================================================= */
             
             // Left Row 2 -> Glove80 Left Top 
-            22, 23, 24, 25, 26, 27, 1,  
+            22, 23, 24, 25, 26, 27, 53, // (Inner 2 mapped to Left Thumb Top Middle)
             
             // Right Row 2 -> Glove80 Right Top 
-            6, 28, 29, 30, 31, 32, 33,  
+            55, 28, 29, 30, 31, 32, 33, // (Inner 2 mapped to Right Thumb Top Inner)
 
             /* ================================================= */
             /* ROW 3: Home / ASDF (7 keys per side)              */
             /* ================================================= */
             
             // Left Row 3 -> Glove80 Left Home 
-            34, 35, 36, 37, 38, 39, 2,  
+            34, 35, 36, 37, 38, 39, 54, // (Inner 3 mapped to Left Thumb Top Outer)
             
             // Right Row 3 -> Glove80 Right Home 
-            7, 40, 41, 42, 43, 44, 45,  
+            56, 40, 41, 42, 43, 44, 45, // (Inner 3 mapped to Right Thumb Top Middle)
 
             /* ================================================= */
             /* ROW 4: Bottom / ZXCV (6 KEYS PER SIDE)            */
@@ -410,27 +411,27 @@ const BOARD_CONFIGS = {
             /* THE CHAOS ROW: Modifiers & Top Thumbs             */
             /* ================================================= */
             
-            // 5 Left Modifiers -> Glove80 Left Bottom Edge (Magic Row)
+            // 5 Left Modifiers -> Glove80 Left Bottom Edge
             64, 65, 66, 67, 68,         
             
-            // 1 Left Top Thumb -> Glove80 Left Thumb Cluster
-            55,                        
+            // 1 Left Top Thumb -> Left Thumb Top Inner
+            52,                        
             
-            // 1 Right Top Thumb -> Glove80 Right Thumb Cluster
-            72,                        
+            // 1 Right Top Thumb -> Right Thumb Top Outer
+            57,                        
             
-            // 5 Right Modifiers -> Glove80 Right Bottom Edge (Magic Row)
+            // 5 Right Modifiers -> Glove80 Right Bottom Edge
             75, 76, 77, 78, 79,        
 
             /* ================================================= */
             /* THE MAIN THUMBS                                   */
             /* ================================================= */
             
-            // 3 Left Thumbs -> Glove80 Left Thumb Cluster
-            52, 53, 54,                
+            // 3 Left Thumbs -> Glove80 Left Thumb Bottom Row
+            69, 70, 71,                 
             
-            // 3 Right Thumbs -> Glove80 Right Thumb Cluster
-            69, 70, 71                 
+            // 3 Right Thumbs -> Glove80 Right Thumb Bottom Row
+            72, 73, 74                  
         ]
     
     
