@@ -2,6 +2,82 @@ const MainUtils = {
     escapeHTML: (str) => {
         if (!str) return '';
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
+    },
+    
+    // THE NEW GENERIC QMK MACRO PARSER
+    translateQMKMacro: (code) => {
+        if (!code) return "Rebuild as a Custom ZMK Macro.";
+        
+        let htmlOutput = "";
+        // Clean out boilerplate C code wrappers to get to the juicy stuff
+        let cleanCode = code.replace(/if\s*\(.*?\)\s*\{/g, '').replace(/\}/g, '').replace(/break;/g, '').replace(/case ST_MACRO_.*?:/g, '').trim();
+
+        // 1. Process SEND_STRING blocks (The most common Oryx Macro)
+        const sendStringRegex = /SEND_STRING\(([\s\S]*?)\);/g;
+        let match;
+        let hasContent = false;
+
+        while ((match = sendStringRegex.exec(cleanCode)) !== null) {
+            hasContent = true;
+            let parsedStr = match[1];
+            
+            // Extract literal strings
+            parsedStr = parsedStr.replace(/"([^"]+)"/g, ' [TYPE_STR:$1] ');
+
+            // Convert QMK Modifiers
+            const mods = { 'SS_LCTL': 'Ctrl', 'SS_LSFT': 'Shift', 'SS_LALT': 'Alt', 'SS_LGUI': 'Cmd/Win', 'SS_RCTL': 'RCtrl', 'SS_RSFT': 'RShift', 'SS_RALT': 'RAlt', 'SS_RGUI': 'RCmd/Win' };
+            for (const [qmkMod, uiMod] of Object.entries(mods)) {
+                let modRegex = new RegExp(`${qmkMod}\\(([^)]+)\\)`, 'g');
+                parsedStr = parsedStr.replace(modRegex, `<strong class="text-slate-600 ml-1">${uiMod} +</strong> $1`);
+            }
+
+            // Convert Taps, Holds, and Releases
+            parsedStr = parsedStr.replace(/SS_TAP\(X_([A-Z0-9_]+)\)/g, '[$1]');
+            parsedStr = parsedStr.replace(/SS_DOWN\(X_([A-Z0-9_]+)\)/g, 'Hold [$1]');
+            parsedStr = parsedStr.replace(/SS_UP\(X_([A-Z0-9_]+)\)/g, 'Release [$1]');
+            
+            // Convert Delays
+            parsedStr = parsedStr.replace(/SS_DELAY\(([0-9]+)\)/g, ' [DELAY:$1] ');
+            
+            // Catch any loose X_ keys
+            parsedStr = parsedStr.replace(/X_([A-Z0-9_]+)/g, '[$1]'); 
+
+            // Visual Formatting Passes (Turn brackets into stylized HTML)
+            parsedStr = parsedStr.replace(/\[TYPE_STR:([^\]]+)\]/g, '<span class="text-blue-600 font-bold text-[11px] whitespace-nowrap inline-block bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 shadow-sm mx-1">Type "$1"</span>');
+            parsedStr = parsedStr.replace(/\[DELAY:([0-9]+)\]/g, '<span class="text-amber-600 font-bold text-[10px] bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mx-1">⏱️ $1ms</span>');
+            parsedStr = parsedStr.replace(/\[([A-Z0-9_]+)\]/g, '<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">$1</span>');
+
+            htmlOutput += `<div class="flex items-center flex-wrap gap-y-2 leading-relaxed mb-2">${parsedStr}</div>`;
+        }
+
+        // 2. Process discrete hardware taps (tap_code16, register_code, etc)
+        const codeRegex = /(tap_code16|register_code16|unregister_code16|tap_code|register_code|unregister_code)\((.*?)\);/g;
+        let tapSteps = [];
+        while ((match = codeRegex.exec(cleanCode)) !== null) {
+            hasContent = true;
+            let action = match[1];
+            let key = match[2].replace('KC_', '').replace('X_', '');
+            let htmlKey = `<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${key}</span>`;
+            
+            if (action.includes('tap')) tapSteps.push(`Tap ${htmlKey}`);
+            else if (action.includes('register')) tapSteps.push(`Hold ${htmlKey}`);
+            else if (action.includes('unregister')) tapSteps.push(`Release ${htmlKey}`);
+        }
+
+        if (tapSteps.length > 0) {
+            htmlOutput += `<div class="flex items-center flex-wrap gap-2 mt-2">${tapSteps.join('<span class="text-slate-300 text-[10px]">➔</span>')}</div>`;
+        }
+
+        // Return the beautiful combined output
+        if (hasContent) {
+            return `
+                <strong class="block text-slate-800 text-xs mb-2">Macro Sequence:</strong>
+                ${htmlOutput}
+                <p class="text-[11px] text-slate-500 mt-2 border-t border-slate-100 pt-2">Recreate this using the "Macro" tab in the MoErgo Editor.</p>
+            `;
+        }
+
+        return "Rebuild as a Custom ZMK Macro.";
     }
 };
 
@@ -160,7 +236,16 @@ export const UI = {
 
         const macroRows = macroCount === 0 
             ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
-            : Object.entries(state.macros).map(([macName, payload]) => `<tr><td class="code"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td><td class="payload"><pre class="bg-transparent p-0 m-0 text-inherit font-inherit whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre></td><td class="reason">Rebuild as a Custom ZMK Macro.</td></tr>`).join('');
+            : Object.entries(state.macros).map(([macName, payload]) => `
+                <tr>
+                    <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
+                    <td class="payload w-2/5 align-top pt-4">
+                        <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
+                            <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
+                        </div>
+                    </td>
+                    <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
+                </tr>`).join('');
 
         reportContainer.innerHTML = `
             <div class="checklist-container">
@@ -225,12 +310,12 @@ export const UI = {
                     </div>
                 </details>
                 
-                <details class="report-category">
+                <details class="report-category" open>
                     <summary>
                         <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                         Your Custom Macros <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">${macroCount}</span>
                     </summary>
-                    <div class="cat-content"><table><tr><th>Key ID</th><th>Text to Type</th><th>Action Required</th></tr>${macroRows}</table></div>
+                    <div class="cat-content"><table><tr><th>Key ID</th><th>Raw C Code</th><th>Decoded Instructions</th></tr>${macroRows}</table></div>
                 </details>
                 
                 <details class="report-category">
