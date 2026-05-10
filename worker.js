@@ -12,10 +12,7 @@ const Utils = {
         if (!state.log[category]) state.log[category] = {};
         if (!state.log[category][original]) state.log[category][original] = { translated, count: 0, reason, contexts: [] };
         state.log[category][original].count++;
-        
-        if (context && category === 'warning') {
-            state.log[category][original].contexts.push(context);
-        }
+        if (context && category === 'warning') state.log[category][original].contexts.push(context);
     },
     hsvToHex: (h, s, v) => {
         let s_pct = s / 255, v_pct = v / 255, h_deg = h * 360 / 255;
@@ -32,32 +29,19 @@ const Utils = {
     },
     getZmkSuggestion: (tok) => {
         if (!tok) return "Requires a custom ZMK Behavior.";
-        if (tok.includes('ALL_T')) return "ZMK does not natively support holding all modifiers (Hyper+Meh). Build a custom macro or hold-tap behavior.";
-        if (tok.includes('TD(') || tok.includes('DANCE_')) return "Rebuild using ZMK Tap-Dance (&td) or Mod-Morph (&morph) inside the Layout Editor.";
-        if (tok.includes('QK_LLCK')) return "Rebuild using ZMK Sticky Layer (&sl) or Toggle Layer (&tog) in the Layout Editor.";
+        if (tok.includes('ALL_T')) return "ZMK does not natively support holding all modifiers. Build a custom macro.";
+        if (tok.includes('TD(') || tok.includes('DANCE_')) return "Rebuild using ZMK Tap-Dance (&td) or Mod-Morph (&morph).";
+        if (tok.includes('QK_LLCK')) return "Rebuild using ZMK Sticky Layer (&sl) or Toggle Layer (&tog).";
         if (tok.includes('MAC_') || tok.includes('PC_')) return "Recreate as a custom ZMK Macro (&macro).";
-        if (tok.includes('NAVIGATOR') || tok.includes('MS_JIGGLER') || tok.includes('SCROLL') || tok.includes('MS_DBL_CLICK')) return "Mouse feature. Requires native ZMK Mouse Keys bindings in the Layout Editor.";
+        if (tok.includes('NAVIGATOR') || tok.includes('MS_JIGGLER') || tok.includes('SCROLL') || tok.includes('MS_DBL_CLICK')) return "Requires native ZMK Mouse Keys bindings.";
         if (tok.includes('LAYER_COLOR') || tok.includes('RGB') || tok.includes('HSV_')) return "Rebuild using ZMK RGB Underglow behaviors (&rgb_ug).";
-        if (tok.includes('LCTL(KC_MS') || tok.includes('LSFT(KC_MS')) return "ZMK cannot mix mouse clicks and keyboard modifiers on a single key. Rebuild as a ZMK Macro.";
-        if (tok.startsWith('LM(')) return "ZMK does not natively support holding a Layer + Modifier simultaneously. Rebuild using a custom ZMK behavior.";
-        return "Requires a custom ZMK Behavior or Macro setup in the Layout Editor.";
+        if (tok.includes('LCTL(KC_MS') || tok.includes('LSFT(KC_MS')) return "ZMK cannot mix mouse clicks and keyboard modifiers on a single key. Rebuild as Macro.";
+        if (tok.startsWith('LM(')) return "ZMK does not natively support holding a Layer + Modifier simultaneously.";
+        return "Requires a custom ZMK Behavior or Macro setup.";
     },
-    getVoyagerPosition: (idx) => {
-        if (idx === null || idx === undefined) return "Unknown";
-        if (idx < 26) { 
-            if (idx < 6) return `Left Hand, Top Row, Col ${idx + 1}`;
-            if (idx < 12) return `Left Hand, Upper Row, Col ${(idx - 6) + 1}`;
-            if (idx < 18) return `Left Hand, Home Row, Col ${(idx - 12) + 1}`;
-            if (idx < 24) return `Left Hand, Bottom Row, Col ${(idx - 18) + 1}`;
-            return `Left Hand, Thumb Cluster, Key ${(idx - 24) + 1}`;
-        } else { 
-            let rIdx = idx - 26;
-            if (rIdx < 6) return `Right Hand, Top Row, Col ${rIdx + 1}`;
-            if (rIdx < 12) return `Right Hand, Upper Row, Col ${(rIdx - 6) + 1}`;
-            if (rIdx < 18) return `Right Hand, Home Row, Col ${(rIdx - 12) + 1}`;
-            if (rIdx < 24) return `Right Hand, Bottom Row, Col ${(rIdx - 18) + 1}`;
-            return `Right Hand, Thumb Cluster, Key ${(rIdx - 24) + 1}`;
-        }
+    getSourcePosition: (idx) => {
+        if (idx === null || idx === undefined) return "Unknown Matrix Position";
+        return `Matrix Index: ${idx}`;
     }
 };
 
@@ -78,17 +62,11 @@ const Parser = {
     extractLedmap: (text) => {
         let ledmapStr = text.match(/const\s+uint8_t\s+PROGMEM\s+ledmap\[\]\[RGB_MATRIX_LED_COUNT\]\[3\]\s*=\s*\{([\s\S]*?)\};/);
         if (!ledmapStr) return {};
-        let layerColors = {};
-        let layerBlocks = ledmapStr[1].split(/\[(\d+)\]\s*=\s*\{/);
+        let layerColors = {}, layerBlocks = ledmapStr[1].split(/\[(\d+)\]\s*=\s*\{/);
         for (let i = 1; i < layerBlocks.length; i += 2) {
-            let layerIdx = parseInt(layerBlocks[i]);
-            let colorData = layerBlocks[i+1];
-            let colors = [];
-            let colorRegex = /\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\}/g;
-            let cMatch;
-            while ((cMatch = colorRegex.exec(colorData)) !== null) {
-                colors.push({ h: parseInt(cMatch[1]), s: parseInt(cMatch[2]), v: parseInt(cMatch[3]) });
-            }
+            let layerIdx = parseInt(layerBlocks[i]), colorData = layerBlocks[i+1], colors = [];
+            let colorRegex = /\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\}/g, cMatch;
+            while ((cMatch = colorRegex.exec(colorData)) !== null) colors.push({ h: parseInt(cMatch[1]), s: parseInt(cMatch[2]), v: parseInt(cMatch[3]) });
             layerColors[layerIdx] = colors;
         }
         return layerColors;
@@ -97,18 +75,13 @@ const Parser = {
     getConfigForToken: (rawToken, state) => {
         let configs = [];
         let extractKeys = (str) => {
-            let res = [str];
-            let match = str.match(/^[A-Z0-9_]+\((.*)\)$/i);
+            let res = [str], match = str.match(/^[A-Z0-9_]+\((.*)\)$/i);
             if (match) res.push(...Parser.splitQmkKeys(match[1]));
             return res.map(s => s.trim());
         };
         
-        let keysToCheck = extractKeys(rawToken);
-        
-        keysToCheck.forEach(k => {
-            let cleanK = k.replace(/^KC_/, '').trim();
-            let tdKey = cleanK.replace(/^TD\(/, '').replace(/\)$/, '');
-            
+        extractKeys(rawToken).forEach(k => {
+            let cleanK = k.replace(/^KC_/, '').trim(), tdKey = cleanK.replace(/^TD\(/, '').replace(/\)$/, '');
             if (state.tapDances[tdKey]) configs.push(state.tapDances[tdKey]);
             if (state.tapDances[cleanK]) configs.push(state.tapDances[cleanK]);
             if (state.macros[cleanK]) configs.push(state.macros[cleanK]);
@@ -137,9 +110,7 @@ const Parser = {
 
         const combosBlock = cCode.match(/combo_t\s+[a-zA-Z0-9_]+[^=]*=\s*\{([\s\S]*?)\};/);
         if (combosBlock) {
-            let blockStr = combosBlock[1];
-            let searchIdx = 0;
-            
+            let blockStr = combosBlock[1], searchIdx = 0;
             while ((searchIdx = blockStr.indexOf('COMBO', searchIdx)) !== -1) {
                 let start = blockStr.indexOf('(', searchIdx);
                 if (start === -1) break;
@@ -152,12 +123,9 @@ const Parser = {
                 }
                 
                 if (end !== -1) {
-                    let innerArgs = blockStr.substring(start + 1, end);
-                    let commaIdx = innerArgs.indexOf(',');
-                    
+                    let innerArgs = blockStr.substring(start + 1, end), commaIdx = innerArgs.indexOf(',');
                     if (commaIdx !== -1) {
-                        let comboName = innerArgs.substring(0, commaIdx).trim();
-                        let resultKey = innerArgs.substring(commaIdx + 1).trim();
+                        let comboName = innerArgs.substring(0, commaIdx).trim(), resultKey = innerArgs.substring(commaIdx + 1).trim();
                         
                         if (comboDefs[comboName]) {
                             let positions = comboDefs[comboName].map(k => {
@@ -186,7 +154,7 @@ const Parser = {
                                     Utils.logConversion(state, `COMBO(${comboName})`, `[Pos: ${positions.join(', ')}] -> ${finalBinding.value}`, "combo");
                                 }
                             } else {
-                                Utils.logConversion(state, `COMBO(${comboName})`, "Dropped", "warning", "Could not map all source keys to the Base Layer matrix.");
+                                Utils.logConversion(state, `COMBO(${comboName})`, "Dropped", "warning", "Could not map all source keys to the target matrix.");
                             }
                         }
                     }
@@ -261,7 +229,7 @@ const Parser = {
         if (tok === 'MOD_MEH' || tok === 'KC_MEH' || tok === 'MEH') tok = 'LS(LC(LALT))';
 
         let configInfo = Parser.getConfigForToken(rawToken, state);
-        let positionName = layerIdx === "Combo" ? "Inside Combo" : Utils.getVoyagerPosition(keyIdx);
+        let positionName = layerIdx === "Combo" ? "Inside Combo" : Utils.getSourcePosition(keyIdx);
         const context = { layer: layerIdx, pos: positionName, config: configInfo, color: keyColor };
         
         if (Constants.DEALBREAKER_KEYS.some(bad => tok.includes(bad))) {
@@ -274,20 +242,15 @@ const Parser = {
 
         let match = tok.match(/^([A-Z0-9_]+)\((.*)\)$/i);
         if (match) {
-            let func = match[1].toUpperCase();
-            let innerTokens = Parser.splitQmkKeys(match[2]);
+            let func = match[1].toUpperCase(), innerTokens = Parser.splitQmkKeys(match[2]);
             let modMap = {"LSFT":"LS", "LCTL":"LC", "LALT":"LA", "LGUI":"LG", "LCMD":"LG", "LWIN":"LG", "LOPT":"LA", "RSFT":"RS", "RCTL":"RC", "RALT":"RA", "RGUI":"RG", "RCMD":"RG", "RWIN":"RG", "ROPT":"RA", "S":"LS", "C":"LC", "A":"LA", "G":"LG", "ALGR":"RA"}; 
             if (modMap[func]) func = modMap[func];
 
             const modTapMap = {
-                "LCTL_T": "LCTRL", "CTL_T": "LCTRL", "C_T": "LCTRL",
-                "LSFT_T": "LSHIFT", "SFT_T": "LSHIFT", "S_T": "LSHIFT",
-                "LALT_T": "LALT", "ALT_T": "LALT", "A_T": "LALT", "LOPT_T": "LALT", "OPT_T": "LALT",
-                "LGUI_T": "LGUI", "GUI_T": "LGUI", "CMD_T": "LGUI", "LCMD_T": "LGUI", "WIN_T": "LGUI", "LWIN_T": "LGUI",
-                "RCTL_T": "RCTRL", 
-                "RSFT_T": "RSHIFT", 
-                "RALT_T": "RALT", "ROPT_T": "RALT", "ALGR_T": "RALT",
-                "RGUI_T": "RGUI", "RCMD_T": "RGUI", "RWIN_T": "RGUI"
+                "LCTL_T": "LCTRL", "CTL_T": "LCTRL", "C_T": "LCTRL", "LSFT_T": "LSHIFT", "SFT_T": "LSHIFT", "S_T": "LSHIFT",
+                "LALT_T": "LALT", "ALT_T": "LALT", "A_T": "LALT", "LOPT_T": "LALT", "OPT_T": "LALT", "LGUI_T": "LGUI", "GUI_T": "LGUI", 
+                "CMD_T": "LGUI", "LCMD_T": "LGUI", "WIN_T": "LGUI", "LWIN_T": "LGUI", "RCTL_T": "RCTRL",  "RSFT_T": "RSHIFT",  
+                "RALT_T": "RALT", "ROPT_T": "RALT", "ALGR_T": "RALT", "RGUI_T": "RGUI", "RCMD_T": "RGUI", "RWIN_T": "RGUI"
             };
 
             if (modTapMap[func]) {
@@ -311,10 +274,12 @@ const Parser = {
                 Utils.logConversion(state, rawToken, `&mt HYPR/MEH`, "hold_tap");
                 return { value: "&mt", params: [modAST, p0] };
             }
+            
             if (func === 'LM') {
-                Utils.logConversion(state, rawToken, "&none", "warning", "ZMK does not natively support holding a Layer + Modifier simultaneously. You will need to build a custom ZMK behavior.", context);
+                Utils.logConversion(state, rawToken, "&none", "warning", "ZMK does not natively support holding a Layer + Modifier simultaneously.", context);
                 return { value: "&none" };
             }
+            
             if (['MT', 'LT', 'OSL', 'TT', 'TG', 'TO', 'MO'].includes(func)) {
                 let params = [];
                 if (['LT', 'OSL', 'TT', 'TG', 'TO', 'MO'].includes(func)) {
@@ -382,24 +347,18 @@ const Parser = {
 
 const BOARD_CONFIGS = {
     "LAYOUT_voyager": {
-        name: "Voyager",
-        targetBoard: "Go60",
-        targetKeyCount: 60,
-        isVoyager: true,
+        name: "Voyager", targetBoard: "Go60", targetKeyCount: 60, isVoyager: true,
+        sourceRightOffset: 26, targetRightOffset: 30, // Go60 right hand index starts at 30
         templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Go60_default.json"
     },
     "LAYOUT_moonlander": {
-        name: "Moonlander",
-        targetBoard: "Glove80",
-        targetKeyCount: 80,
-        isVoyager: false,
+        name: "Moonlander", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
+        sourceRightOffset: 36, targetRightOffset: 40, // Glove80 right hand index starts at 40
         templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json"
     },
     "LAYOUT_ergodox": {
-        name: "ErgoDox",
-        targetBoard: "Glove80",
-        targetKeyCount: 80,
-        isVoyager: false,
+        name: "ErgoDox", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
+        sourceRightOffset: 38, targetRightOffset: 40, // ErgoDox 76-keys, Glove80 targets 40
         templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json"
     }
 };
@@ -412,8 +371,7 @@ self.onmessage = async function(e) {
         const state = { log: { layer_binding: {}, hold_tap: {}, combo: {}, warning: {} }, macros: {}, tapDances: {}, rawDefines: {}, customCases: {}, config: { tappingTerm: 200, comboTerm: 50 }, defines: {} };
         const cleanText = Parser.prepareCCode(rawText);
 
-        let activeBoard = null;
-        let layoutMacroName = null;
+        let activeBoard = null, layoutMacroName = null;
 
         for (const [macro, config] of Object.entries(BOARD_CONFIGS)) {
             if (cleanText.includes(macro)) {
@@ -437,9 +395,7 @@ self.onmessage = async function(e) {
         
         const rawDefRegex = /#define\s+([A-Za-z0-9_]+)\s+([^\n\r]+)/g;
         while ((m = rawDefRegex.exec(rawText)) !== null) {
-            if (m[1] !== "TAPPING_TERM" && m[1] !== "COMBO_TERM") {
-                state.rawDefines[m[1]] = m[0].trim();
-            }
+            if (m[1] !== "TAPPING_TERM" && m[1] !== "COMBO_TERM") state.rawDefines[m[1]] = m[0].trim();
         }
 
         const extractBraceBlockRaw = (text, startIdx) => {
@@ -455,30 +411,22 @@ self.onmessage = async function(e) {
             return null;
         };
 
-        let tdRegex = /void\s+(dance_[a-zA-Z0-9_]+)_finished\s*\(/gi;
-        let match;
+        let tdRegex = /void\s+(dance_[a-zA-Z0-9_]+)_finished\s*\(/gi, match;
         while ((match = tdRegex.exec(rawText)) !== null) {
-            let block = extractBraceBlockRaw(rawText, match.index);
-            let name = match[1].toUpperCase();
+            let block = extractBraceBlockRaw(rawText, match.index), name = match[1].toUpperCase();
             if (block) state.tapDances[name] = `void ${match[1]}_finished(...) ${block}`;
         }
         
         let tdResetRegex = /void\s+(dance_[a-zA-Z0-9_]+)_reset\s*\(/gi;
         while ((match = tdResetRegex.exec(rawText)) !== null) {
-            let block = extractBraceBlockRaw(rawText, match.index);
-            let name = match[1].toUpperCase();
-            if (block && state.tapDances[name]) {
-                state.tapDances[name] += `\n\nvoid ${match[1]}_reset(...) ${block}`;
-            }
+            let block = extractBraceBlockRaw(rawText, match.index), name = match[1].toUpperCase();
+            if (block && state.tapDances[name]) state.tapDances[name] += `\n\nvoid ${match[1]}_reset(...) ${block}`;
         }
 
         let macroRegex = /case\s+(ST_MACRO_[a-zA-Z0-9_]+):/g;
         while ((match = macroRegex.exec(rawText)) !== null) {
-            let start = match.index;
-            let end = rawText.indexOf('break;', start);
-            if (end !== -1) {
-                state.macros[match[1]] = `case ${match[1]}:\n${rawText.substring(start + match[0].length, end).trim()}\n    break;`;
-            }
+            let start = match.index, end = rawText.indexOf('break;', start);
+            if (end !== -1) state.macros[match[1]] = `case ${match[1]}:\n${rawText.substring(start + match[0].length, end).trim()}\n    break;`;
         }
 
         let caseRegexFast = /case\s+([A-Za-z0-9_]+)\s*:/g;
@@ -486,14 +434,10 @@ self.onmessage = async function(e) {
             let name = match[1];
             if (name.startsWith('ST_MACRO_') || name.startsWith('TD_') || name.startsWith('KC_')) continue;
             
-            let start = match.index + match[0].length;
-            let end = rawText.indexOf('break;', start);
-            
+            let start = match.index + match[0].length, end = rawText.indexOf('break;', start);
             if (end !== -1 && (end - start) < 1000) {
                 let block = rawText.substring(start, end).trim();
-                if (block && !state.macros[name]) {
-                    state.customCases[name] = block;
-                }
+                if (block && !state.macros[name]) state.customCases[name] = block;
             }
         }
 
@@ -527,19 +471,40 @@ self.onmessage = async function(e) {
                 return astKey;
             });
             
+            // >>> NEW DYNAMIC MATRIX MAPPING LOGIC <<<
             let mapped = new Array(activeBoard.targetKeyCount).fill(null).map(() => ({ value: "&trans" }));
             
-            if (activeBoard.isVoyager) {
-                for (let i = 0; i < 48; i++) { if (astKeys[i]) mapped[i] = astKeys[i]; }
-                if (astKeys[48]) mapped[50] = astKeys[48]; 
-                if (astKeys[49]) mapped[51] = astKeys[49];
-                if (astKeys[50]) mapped[54] = astKeys[50]; 
-                if (astKeys[51]) mapped[55] = astKeys[51];
-            } else {
-                for (let i = 0; i < astKeys.length && i < activeBoard.targetKeyCount; i++) {
-                    if (astKeys[i]) mapped[i] = astKeys[i];
+            astKeys.forEach((key, i) => {
+                if (!key) return;
+                let targetIdx = i;
+
+                if (activeBoard.name === "Voyager") {
+                    // Safe Go60 padding logic explicitly retained!
+                    if (i < 48) targetIdx = i;
+                    else if (i === 48) targetIdx = 50; 
+                    else if (i === 49) targetIdx = 51;
+                    else if (i === 50) targetIdx = 54;
+                    else if (i === 51) targetIdx = 55;
+                } else {
+                    // Dynamic math for Moonlander & Ergodox to Glove80
+                    let offset = activeBoard.sourceRightOffset || (astKeys.length / 2);
+                    
+                    if (i < offset) {
+                        targetIdx = i; // Left hand
+                        // Moonlander specific left thumb shift into Glove80 cluster
+                        if (activeBoard.name === "Moonlander" && i >= 32 && i <= 35) targetIdx = 52 + (i - 32);
+                    } else {
+                        let localRight = i - offset;
+                        targetIdx = activeBoard.targetRightOffset + localRight; // Right hand shifted correctly!
+                        // Moonlander specific right thumb shift into Glove80 cluster
+                        if (activeBoard.name === "Moonlander" && localRight >= 32 && localRight <= 35) targetIdx = 69 + (localRight - 32);
+                    }
                 }
-            }
+
+                if (targetIdx >= 0 && targetIdx < activeBoard.targetKeyCount) {
+                    mapped[targetIdx] = key;
+                }
+            });
             
             return mapped;
         });
@@ -589,10 +554,10 @@ self.onmessage = async function(e) {
         });
 
         templateJson.uuid = Utils.safeUUID();
-        templateJson.title = title ? `${title}_Appended` : "Voyago_Export_Appended";
+        templateJson.title = title ? `${title}_Appended` : "OMA_Export_Appended";
         
         templateJson.layers = (templateJson.layers || []).concat(astLayers);
-        templateJson.layer_names = (templateJson.layer_names || []).concat(astLayers.map((_, i) => `${activeBoard.name}_${i}`));
+        templateJson.layer_names = (templateJson.layer_names || []).concat(astLayers.map((_, i) => `OMA_${activeBoard.name}_${i}`));
         templateJson.combos = (templateJson.combos || []).concat(generatedCombos);
 
         self.postMessage({ 
