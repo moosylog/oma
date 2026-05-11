@@ -6,7 +6,7 @@
   # OMA
   ### **Oryx Migration Assistant**
 
-  **The One-Click Migration Path: ZSA Oryx ➔ MoErgo Layout Editor**
+  **ZSA Oryx ➔ MoErgo Layout Editor**
 
 [![Launch OMA now](https://img.shields.io/badge/Launch_OMA-2563EB?style=for-the-badge&logo=rocket&logoColor=white)](https://moosylog.github.io/oma/)
   <br>
