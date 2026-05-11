@@ -13,16 +13,9 @@
 
 </div>
 
-You just upgraded your keyboard.  
-Voyager, Moonlander, Glove80, Go60 — whatever you moved to, the hardware feels great.
+OMA converts ZSA Oryx layouts into MoErgo-compatible layouts.
 
-But your layout? That part hurts.
-
-OMA exists for exactly this moment.
-
-It takes your ZSA Oryx setup and translates it into MoErgo’s ecosystem so your layers, combos, and lighting don’t have to start from scratch.
-
-No rebuild. No reinvention. Just continuation.
+It preserves your layers, combos, and lighting so you can move to new hardware without rebuilding from scratch.
 
 ---
 
