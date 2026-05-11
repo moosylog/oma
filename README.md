@@ -100,6 +100,9 @@ OMA preserves as much of your Oryx setup as possible.
 
 Some features don’t translate 1:1 across firmware systems.
 
+- **Layer Names** ⚠️  
+  They are not stored in the Oryx zip file 
+  
 - **Tap Dances** ⚠️  
   Rebuild using MoErgo tools  
 
@@ -113,22 +116,6 @@ OMA clearly flags these so nothing is lost silently.
 
 ---
 
-## Conversion overview
-
-| Feature | Status | Notes |
-| :-- | :-- | :-- |
-| **Alphas / Numbers / Symbols** | ✅ | Direct ZMK mapping |
-| **F-Keys / Numpad / Nav** | ✅ | Standard keycodes |
-| **Combos** | ✅ | Geometry recalculated |
-| **Hold-Taps** | ✅ | Fully preserved |
-| **Layer Toggles** | ✅ | Safe remapping |
-| **Media & System keys** | ✅ | Native mapping |
-| **RGB Lighting** | ✅ | Converted |
-| **Mouse Controls** | ✅ | Rebuilt for MoErgo |
-| **Advanced Macros** | ⚠️ | Manual rebuild |
-| **Tap Dances** | ⚠️ | Manual rebuild |
-
----
 
 ## Why OMA exists
 
@@ -141,9 +128,7 @@ OMA just moves it with you.
 
 <div align="center">
 
-**Don’t rebuild your layout. Just relocate it.**
-
-Built for ergonomic keyboard migrations.
+**By Moosy Research**
 
 </div>
 
