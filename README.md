@@ -119,7 +119,7 @@ OMA clearly flags these so nothing is lost silently.
 
 ## Why OMA exists
 
-Because switching keyboards shouldn’t mean starting over.
+Because switching keyboards shouldn’t mean starting over. QMK to ZMK
 
 Your layout is muscle memory.  
 OMA just moves it with you.
