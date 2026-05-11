@@ -1,19 +1,18 @@
-<sup> AI generated</sup>
+<sup>AI generated</sup>
 
 <div align="center">
   <img src="logo_small.png" alt="OMA Logo" width="120" style="margin-bottom: 20px;">
 
+  # OMA  
+  ### Oryx Migration Assistant  
 
-# OMA  
-### Oryx Migration Assistant  
+  **ZSA Oryx ➜ MoErgo Layout Editor**
 
-**ZSA Oryx ➜ MoErgo Layout Editor**
-
-[![Launch OMA now](https://img.shields.io/badge/Launch_OMA-2563EB?style=for-the-badge&logo=rocket&logoColor=white)](https://moosylog.github.io/oma/)
-
+  [![Launch OMA now](https://img.shields.io/badge/Launch_OMA-2563EB?style=for-the-badge&logo=rocket&logoColor=white)](https://moosylog.github.io/oma/)
 </div>
 
-<br>
+---
+
 OMA converts ZSA Oryx layouts into MoErgo-compatible layouts.
 
 It migrates as much as possible from your existing setup and provides clear instructions for anything it can’t automatically convert.
@@ -22,11 +21,11 @@ It migrates as much as possible from your existing setup and provides clear inst
 
 ## Effortless migration
 
-OMA runs locally in your browser and converts your layout in place.
+OMA runs locally in your browser.
 
 No uploads. No servers. No waiting.
 
-Just drop your file in and get a MoErgo-ready layout out.
+Just drop in your file and get a MoErgo-ready layout.
 
 ---
 
@@ -34,44 +33,43 @@ Just drop your file in and get a MoErgo-ready layout out.
 
 Start in ZSA Oryx.
 
-- Open your layout
-- Click **Download Source** (the `< >` icon)
-- Save the `.zip` file to your device
+- Open your layout  
+- Click **Download Source** (the `< >` icon)  
+- Save the `.zip` file locally  
 
-That file contains everything OMA needs.
+Everything OMA needs is inside that file.
 
 ---
 
-## 2. Drop it into OMA
+## 2. Import into OMA
 
-Open OMA in your browser.
+Open OMA in your browser and drag in your `.zip` file.
 
-Drag and drop your `.zip` file.
+OMA immediately begins translating:
 
-OMA immediately starts translating:
-
-- key positions
-- layers
-- combos
-- macros
-- lighting data
+- key positions  
+- layers  
+- combos  
+- macros  
+- lighting data  
 
 No configuration required.
 
 ---
 
-## 3. Review what changed
+## 3. Review changes
 
 OMA generates a migration report.
 
 You’ll see:
 
-- what mapped automatically
-- what was adapted for MoErgo
-- what needs manual attention
+- what mapped automatically  
+- what was adapted for MoErgo  
+- what requires manual setup  
 
-Most layouts are fully portable.  
-Some advanced features need a quick rebuild inside MoErgo tools.
+Most layouts migrate fully.
+
+Some advanced features may need a quick rebuild in MoErgo tools.
 
 ---
 
@@ -81,9 +79,9 @@ Click **Download Layout**.
 
 Then:
 
-- Open the MoErgo Layout Editor
-- Import the `.json` file
-- Your layout is ready to use
+- Open the MoErgo Layout Editor  
+- Import the `.json` file  
+- Your layout is ready  
 
 Layers preserved. Structure intact. Ready to type.
 
@@ -94,9 +92,9 @@ Layers preserved. Structure intact. Ready to type.
 OMA preserves as much of your Oryx setup as possible.
 
 - **Key Mapping** → Direct conversion to ZMK keycodes  
-- **Layers** → Rebuilt with safe indexing for MoErgo boards  
+- **Layers** → Rebuilt with safe indexing  
 - **Combos** → Geometry recalculated for new layouts  
-- **Hold-Taps** → Preserved and nested correctly  
+- **Hold-Taps** → Fully preserved and translated  
 - **Layer Keys** → Converted to native ZMK behaviors  
 - **Media & System Keys** → Fully mapped  
 - **Mouse Keys** → Translated to MoErgo controls  
@@ -109,35 +107,32 @@ OMA preserves as much of your Oryx setup as possible.
 Some features don’t translate 1:1 across firmware systems.
 
 - **Tap Dances** ⚠️  
-  Rebuild using MoErgo tools
+  Rebuild using MoErgo tools  
 
 - **Custom Macros** ⚠️  
-  Recreate in ZMK macro system
+  Recreate in ZMK macro system  
 
 - **Oryx proprietary features** ⚠️  
-  Some behaviors require manual replacement
+  Some behaviors require manual replacement  
 
-OMA flags these clearly so nothing is lost silently.
+OMA clearly flags these so nothing is lost silently.
 
 ---
 
 ## Conversion overview
 
 | Feature | Status | Notes |
-| :--- | :--- | :--- |
-| **Alphas, Numbers, & Symbols** | ✅ 100% | 1:1 mapping to ZMK standard keycodes. |
-| **F-Keys, Numpad, & Nav** | ✅ 100% | 1:1 mapping to ZMK standard keycodes. |
-| **Combos (Chords)** | ✅ 100% | Recalculates matrix geometry for the new physical layout. |
-| **Hold-Taps (`LT`, `MT`)** | ✅ 100% | Deeply nested modifiers safely parsed and translated. |
-| **Layer Toggles (`MO`, `TG`, `TO`)** | ✅ 100% | Layer indices are dynamically shifted to append safely. |
-| **Sticky Keys (`OSM`)** | ✅ 100% | Natively converted to ZMK `&sk`. |
-| **Native Mouse Keys** | ✅ 100% | Mapped to MoErgo clicks, scroll, and movement. |
-| **Media & System Controls** | ✅ 100% | Volume, brightness, and playback keys flawlessly mapped. |
-| **Hardware Controls (BT, Reset)** | ✅ 100% | Maps Bluetooth, Bootloader, and Reset commands safely. |
-| **RGB Lighting & Colors** | ✅ 100% | Custom HSV colors converted to HEX and bound to layers. |
-| **Tap Dances (`TD`)** | ⚠️ Manual | Rebuild using MoErgo's *Mod-Morph* or *Tap-Dance* tools. |
-| **Custom Macros (`ST_MACRO`)** | ⚠️ Manual | Rebuild text macros in the ZMK Macro editor. |
-| **Oryx "Magic" Keys** | ⚠️ Manual | Proprietary C-code features (like Mouse Jiggler) must be replaced with native MoErgo features. |
+| :-- | :-- | :-- |
+| **Alphas / Numbers / Symbols** | ✅ | Direct ZMK mapping |
+| **F-Keys / Numpad / Nav** | ✅ | Standard keycodes |
+| **Combos** | ✅ | Geometry recalculated |
+| **Hold-Taps** | ✅ | Fully preserved |
+| **Layer Toggles** | ✅ | Safe remapping |
+| **Media & System keys** | ✅ | Native mapping |
+| **RGB Lighting** | ✅ | Converted |
+| **Mouse Controls** | ✅ | Rebuilt for MoErgo |
+| **Advanced Macros** | ⚠️ | Manual rebuild |
+| **Tap Dances** | ⚠️ | Manual rebuild |
 
 ---
 
@@ -161,8 +156,3 @@ Built for ergonomic keyboard migrations.
 ---
 
 <sup>AI generated</sup>
-
-
-
-
-
