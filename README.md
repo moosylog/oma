@@ -3,46 +3,131 @@
 <div align="center">
   <img src="logo_small.png" alt="OMA Logo" width="120" style="margin-bottom: 20px;">
 
-  # OMA
-  ### **Oryx Migration Assistant**
 
-  **ZSA Oryx ➔ MoErgo Layout Editor**
+# OMA  
+### Oryx Migration Assistant  
+
+**ZSA Oryx ➜ MoErgo Layout Editor**
 
 [![Launch OMA now](https://img.shields.io/badge/Launch_OMA-2563EB?style=for-the-badge&logo=rocket&logoColor=white)](https://moosylog.github.io/oma/)
-  <br>
+
 </div>
 
-You’ve made the exciting choice to upgrade your ergonomic typing setup. Whether you are moving from a **Voyager** to a **Go60** or a **Moonlander** to a **Glove80**, getting a new keyboard is a thrill—but losing the custom layout you spent months perfecting isn't.
+You just upgraded your keyboard.  
+Voyager, Moonlander, Glove80, Go60 — whatever you moved to, the hardware feels great.
 
-Instead of starting over in a new firmware ecosystem (ZMK), **OMA** acts as your personal assistant. We handle the heavy lifting of translating your ZSA Oryx code so that your layers, combos, and lighting feel right at home on your new MoErgo board from day one.
+But your layout? That part hurts.
 
----
+OMA exists for exactly this moment.
 
-## ✨ The OMA Advantage
+It takes your ZSA Oryx setup and translates it into MoErgo’s ecosystem so your layers, combos, and lighting don’t have to start from scratch.
 
-OMA bridges the gap between QMK (Oryx) and ZMK (MoErgo) architectures instantly, handled locally in your browser:
-
-* **Hardware Mapping:** OMA intelligently overlays your ZSA keys onto the MoErgo template. It pads the empty spaces with transparent keys so MoErgo's native hardware (like the Go60 touchpad) remains fully functional.
-* **Smart Board Support:** * **ZSA Voyager ➔ MoErgo Go60** (52 keys mapped to 60)
-    * **ZSA Moonlander ➔ MoErgo Glove80** (72 keys mapped to 80)
-* **The "Universal Switch":** Once OMA moves your layout into the MoErgo Layout Editor, you can use MoErgo's native tools to convert between the Go60 and Glove80 effortlessly.
-* **Deep Translation:** OMA "unwraps" complex QMK macros (like `LSFT(KC_A)` or `MOD_MEH`) and compiles them into valid, deeply nested ZMK JSON arrays automatically.
-* **RGB & Color Preservation:** OMA extracts the hidden color matrix from your source code, converts the math, and injects your exact custom colors into the new layout.
-* **The "Assistant" Report:** Proprietary features that don't have a 1:1 translation (like Mouse Jiggler or Siri macros) are caught and flagged. OMA generates a friendly, printable report explaining exactly *what* those keys were and *how* to rebuild them in the MoErgo editor.
+No rebuild. No reinvention. Just continuation.
 
 ---
 
-## 📖 How to Use OMA
+## Effortless migration
 
-OMA is designed for simplicity. No technical knowledge or server uploads are required.
+OMA runs locally in your browser and converts your layout in place.
 
-1. **Get Your Source:** In ZSA Oryx, look for the `< >` icon and select **Download Source**. *(Important: Do not click the main "Download Firmware" button).*
-2. **Drop it in OMA:** Drag and drop the downloaded `.zip` file into the OMA drop zone.
-3. **Review the Report:** OMA processes your layout in milliseconds. Check the report to see which keys were auto-mapped and which require a quick manual touch-up.
-4. **Download & Import:** Click **Download Layout** to get your `.json` file, and drag it directly into the [MoErgo Layout Editor](https://my.moergo.com/)
+No uploads. No servers. No waiting.
+
+Just drop your file in and get a MoErgo-ready layout out.
+
 ---
 
-## 🔍 Under the Hood: Conversion Matrix
+## 1. Get your source
+
+Start in ZSA Oryx.
+
+- Open your layout
+- Click **Download Source** (the `< >` icon)
+- Save the `.zip` file to your device
+
+That file contains everything OMA needs.
+
+---
+
+## 2. Drop it into OMA
+
+Open OMA in your browser.
+
+Drag and drop your `.zip` file.
+
+OMA immediately starts translating:
+
+- key positions
+- layers
+- combos
+- macros
+- lighting data
+
+No configuration required.
+
+---
+
+## 3. Review what changed
+
+OMA generates a migration report.
+
+You’ll see:
+
+- what mapped automatically
+- what was adapted for MoErgo
+- what needs manual attention
+
+Most layouts are fully portable.  
+Some advanced features need a quick rebuild inside MoErgo tools.
+
+---
+
+## 4. Export to MoErgo
+
+Click **Download Layout**.
+
+Then:
+
+- Open the MoErgo Layout Editor
+- Import the `.json` file
+- Your layout is ready to use
+
+Layers preserved. Structure intact. Ready to type.
+
+---
+
+## What OMA handles
+
+OMA preserves as much of your Oryx setup as possible.
+
+- **Key Mapping** → Direct conversion to ZMK keycodes  
+- **Layers** → Rebuilt with safe indexing for MoErgo boards  
+- **Combos** → Geometry recalculated for new layouts  
+- **Hold-Taps** → Preserved and nested correctly  
+- **Layer Keys** → Converted to native ZMK behaviors  
+- **Media & System Keys** → Fully mapped  
+- **Mouse Keys** → Translated to MoErgo controls  
+- **RGB & Colors** → Converted to compatible formats  
+
+---
+
+## What needs attention
+
+Some features don’t translate 1:1 across firmware systems.
+
+- **Tap Dances** ⚠️  
+  Rebuild using MoErgo tools
+
+- **Custom Macros** ⚠️  
+  Recreate in ZMK macro system
+
+- **Oryx proprietary features** ⚠️  
+  Some behaviors require manual replacement
+
+OMA flags these clearly so nothing is lost silently.
+
+---
+
+## Conversion overview
 
 | Feature | Status | Notes |
 | :--- | :--- | :--- |
@@ -62,10 +147,28 @@ OMA is designed for simplicity. No technical knowledge or server uploads are req
 
 ---
 
-<div align="center">
-  <b>Don't rewire your brain. Just move your layout.</b><br>
-  Built with ⌨️ for the ergonomic community.
-</div>
+## Why OMA exists
+
+Because switching keyboards shouldn’t mean starting over.
+
+Your layout is muscle memory.  
+OMA just moves it with you.
+
 ---
 
-<sup> AI generated</sup>
+<div align="center">
+
+**Don’t rebuild your layout. Just relocate it.**
+
+Built for ergonomic keyboard migrations.
+
+</div>
+
+---
+
+<sup>AI generated</sup>
+
+
+
+
+
