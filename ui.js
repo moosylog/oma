@@ -4,16 +4,99 @@ const MainUtils = {
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
     },
     
-    // Generic QMK Macro Parser
+    // Generic QMK Macro & Tap Dance Parser
     translateQMKMacro: (code) => {
         if (!code) return "Rebuild as a Custom ZMK Macro.";
         
-        // 1. Prevent "Double Content" by completely ignoring the boilerplate _reset functions!
         let codeToParse = code;
         if (codeToParse.includes('_reset')) {
+            // Hide the duplicate "release" function for clarity
             codeToParse = codeToParse.split(/void\s+[a-zA-Z0-9_]+_reset/)[0];
         }
-        
+
+        // ====================================================================
+        // 1. SMART TAP-DANCE PARSER (Conditional Behaviors)
+        // ====================================================================
+        if (codeToParse.includes('case SINGLE_TAP:') || codeToParse.includes('dance_step')) {
+            let tdHtml = "";
+            const tdCases = [
+                { id: 'SINGLE_TAP', label: '1 Tap' },
+                { id: 'SINGLE_HOLD', label: 'Hold' },
+                { id: 'DOUBLE_TAP', label: '2 Taps' },
+                { id: 'DOUBLE_HOLD', label: 'Tap + Hold' },
+                { id: 'DOUBLE_SINGLE_TAP', label: 'Tap then Hold' },
+                { id: 'TRIPLE_TAP', label: '3 Taps' },
+                { id: 'TRIPLE_HOLD', label: '2 Taps + Hold' }
+            ];
+
+            let foundTd = false;
+            tdCases.forEach(c => {
+                // Extract code belonging only to this specific case
+                let caseRegex = new RegExp(`case\\s+${c.id}:(.*?)(?:break;|case\\s+[A-Z_]+:|\\})`, 's');
+                let match = codeToParse.match(caseRegex);
+                
+                if (match) {
+                    let actionStr = match[1].trim();
+                    let steps = [];
+                    const regex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\)/g;
+                    let m;
+                    
+                    while ((m = regex.exec(actionStr)) !== null) {
+                        let action = m[1];
+                        let rawKey = m[2];
+                        let uiKey = rawKey.replace(/KC_/g, '').replace(/X_/g, '');
+                        
+                        // Parse QMK Modifiers into clean UI labels
+                        uiKey = uiKey.replace(/LCTL\((.*?)\)/, 'Ctrl + $1')
+                                     .replace(/LSFT\((.*?)\)/, 'Shift + $1')
+                                     .replace(/LALT\((.*?)\)/, 'Alt + $1')
+                                     .replace(/LGUI\((.*?)\)/, 'Cmd + $1')
+                                     .replace(/RCTL\((.*?)\)/, 'RCtrl + $1')
+                                     .replace(/RSFT\((.*?)\)/, 'RShift + $1')
+                                     .replace(/RALT\((.*?)\)/, 'RAlt + $1')
+                                     .replace(/RGUI\((.*?)\)/, 'RCmd + $1');
+                                     
+                        let keycap = `<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${uiKey}</span>`;
+                        
+                        if (action.includes('tap')) steps.push(`Tap ${keycap}`);
+                        else if (action.includes('register')) steps.push(`Hold ${keycap}`);
+                    }
+                    
+                    // Deduplicate sequential actions
+                    let uniqueSteps = [];
+                    steps.forEach(step => {
+                        if (uniqueSteps[uniqueSteps.length - 1] !== step) uniqueSteps.push(step);
+                    });
+                    
+                    if (uniqueSteps.length > 0) {
+                        tdHtml += `
+                            <div class="flex items-start gap-3 mb-2 mt-1">
+                                <span class="w-24 shrink-0 text-[10px] font-bold text-slate-500 uppercase text-right mt-1">${c.label}</span> 
+                                <span class="text-slate-300 text-[10px] mt-1">➔</span> 
+                                <div class="flex flex-wrap items-center gap-y-1">
+                                    ${uniqueSteps.join('<span class="text-slate-300 text-[10px] mx-1">+</span>')}
+                                </div>
+                            </div>
+                        `;
+                        foundTd = true;
+                    }
+                }
+            });
+
+            if (foundTd) {
+                return `
+                    <strong class="block text-slate-800 text-xs mb-2">Tap Dance Behaviors:</strong>
+                    <div class="pt-1 pb-1">
+                        ${tdHtml}
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-3 border-t border-slate-100 pt-2">Rebuild this using a ZMK "Tap Dance" or "Hold-Tap" behavior.</p>
+                `;
+            }
+        }
+
+        // ====================================================================
+        // 2. STANDARD MACRO PARSER (Sequential Behaviors)
+        // ====================================================================
         let htmlOutput = "";
         let cleanCode = codeToParse.replace(/if\s*\(.*?\)\s*\{/g, '').replace(/\}/g, '').replace(/break;/g, '').replace(/case ST_MACRO_.*?:/g, '').trim();
 
@@ -46,20 +129,25 @@ const MainUtils = {
             htmlOutput += `<div class="flex items-center flex-wrap gap-y-2 leading-relaxed mb-2">${parsedStr}</div>`;
         }
 
-        // 2. We skip "unregister_code" so we don't spam the user with redundant release steps
-        const codeRegex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\);/g;
+        const codeRegex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\)/g;
         let tapSteps = [];
         while ((match = codeRegex.exec(cleanCode)) !== null) {
             hasContent = true;
             let action = match[1];
-            let key = match[2].replace('KC_', '').replace('X_', '');
-            let htmlKey = `<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${key}</span>`;
+            let rawKey = match[2];
+            let uiKey = rawKey.replace(/KC_/g, '').replace(/X_/g, '');
             
-            if (action.includes('tap')) tapSteps.push(`Tap ${htmlKey}`);
-            else if (action.includes('register')) tapSteps.push(`Hold ${htmlKey}`);
+            uiKey = uiKey.replace(/LCTL\((.*?)\)/, 'Ctrl + $1')
+                         .replace(/LSFT\((.*?)\)/, 'Shift + $1')
+                         .replace(/LALT\((.*?)\)/, 'Alt + $1')
+                         .replace(/LGUI\((.*?)\)/, 'Cmd + $1');
+                         
+            let keycap = `<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${uiKey}</span>`;
+            
+            if (action.includes('tap')) tapSteps.push(`Tap ${keycap}`);
+            else if (action.includes('register')) tapSteps.push(`Hold ${keycap}`);
         }
         
-        // De-duplicate identical sequential steps to keep it perfectly clean
         let uniqueSteps = [];
         tapSteps.forEach(step => {
             if (uniqueSteps[uniqueSteps.length - 1] !== step) {
