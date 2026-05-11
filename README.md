@@ -39,8 +39,7 @@ OMA is designed for simplicity. No technical knowledge or server uploads are req
 1. **Get Your Source:** In ZSA Oryx, look for the `< >` icon and select **Download Source**. *(Important: Do not click the main "Download Firmware" button).*
 2. **Drop it in OMA:** Drag and drop the downloaded `.zip` file into the OMA drop zone.
 3. **Review the Report:** OMA processes your layout in milliseconds. Check the report to see which keys were auto-mapped and which require a quick manual touch-up.
-4. **Download & Import:** Click **Download Layout** to get your `.json` file, and drag it directly into the [MoErgo Layout Editor](https://layout.moergo.com).
-
+4. **Download & Import:** Click **Download Layout** to get your `.json` file, and drag it directly into the [MoErgo Layout Editor](https://my.moergo.com/)
 ---
 
 ## 🔍 Under the Hood: Conversion Matrix
