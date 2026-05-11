@@ -16,7 +16,7 @@
 <br>
 OMA converts ZSA Oryx layouts into MoErgo-compatible layouts.
 
-OMA migrates as much as possible from your existing layout and provides basic instructions for anything it can’t automatically convert.
+It migrates as much as possible from your existing setup and provides clear instructions for anything it can’t automatically convert.
 
 ---
 
