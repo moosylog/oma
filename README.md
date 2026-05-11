@@ -45,13 +45,7 @@ Everything OMA needs is inside that file.
 
 Open OMA in your browser and drag in your `.zip` file.
 
-OMA immediately begins translating:
-
-- key positions  
-- layers  
-- combos  
-- macros  
-- lighting data  
+OMA immediately begins translating your layout.
 
 No configuration required.
 
@@ -67,7 +61,7 @@ You’ll see:
 - what was adapted for MoErgo  
 - what requires manual setup  
 
-Most layouts migrate fully.
+Most of your layouts is migrated.
 
 Some advanced features may need a quick rebuild in MoErgo tools.
 
