@@ -31,19 +31,19 @@ const MainUtils = {
 
             let foundTd = false;
             tdCases.forEach(c => {
-                // Extract code belonging only to this specific case
                 let caseRegex = new RegExp(`case\\s+${c.id}:(.*?)(?:break;|case\\s+[A-Z_]+:|\\})`, 's');
                 let match = codeToParse.match(caseRegex);
                 
                 if (match) {
                     let actionStr = match[1].trim();
                     let steps = [];
-                    const regex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\)/g;
+                    // FIX: Match all the way to the semicolon so nested parentheses don't break the regex
+                    const regex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\)\s*;/g;
                     let m;
                     
                     while ((m = regex.exec(actionStr)) !== null) {
                         let action = m[1];
-                        let rawKey = m[2];
+                        let rawKey = m[2]; // This will now correctly be LCTL(KC_A)
                         let uiKey = rawKey.replace(/KC_/g, '').replace(/X_/g, '');
                         
                         // Parse QMK Modifiers into clean UI labels
@@ -62,7 +62,6 @@ const MainUtils = {
                         else if (action.includes('register')) steps.push(`Hold ${keycap}`);
                     }
                     
-                    // Deduplicate sequential actions
                     let uniqueSteps = [];
                     steps.forEach(step => {
                         if (uniqueSteps[uniqueSteps.length - 1] !== step) uniqueSteps.push(step);
@@ -84,12 +83,12 @@ const MainUtils = {
             });
 
             if (foundTd) {
+                // FIX: Removed the redundant instructions text from the bottom here!
                 return `
                     <strong class="block text-slate-800 text-xs mb-2">Tap Dance Behaviors:</strong>
                     <div class="pt-1 pb-1">
                         ${tdHtml}
                     </div>
-                    <p class="text-[11px] text-slate-500 mt-3 border-t border-slate-100 pt-2">Rebuild this using a ZMK "Tap Dance" or "Hold-Tap" behavior.</p>
                 `;
             }
         }
@@ -129,7 +128,8 @@ const MainUtils = {
             htmlOutput += `<div class="flex items-center flex-wrap gap-y-2 leading-relaxed mb-2">${parsedStr}</div>`;
         }
 
-        const codeRegex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\)/g;
+        // FIX: Match to the semicolon for standard macros too!
+        const codeRegex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\)\s*;/g;
         let tapSteps = [];
         while ((match = codeRegex.exec(cleanCode)) !== null) {
             hasContent = true;
@@ -140,7 +140,11 @@ const MainUtils = {
             uiKey = uiKey.replace(/LCTL\((.*?)\)/, 'Ctrl + $1')
                          .replace(/LSFT\((.*?)\)/, 'Shift + $1')
                          .replace(/LALT\((.*?)\)/, 'Alt + $1')
-                         .replace(/LGUI\((.*?)\)/, 'Cmd + $1');
+                         .replace(/LGUI\((.*?)\)/, 'Cmd + $1')
+                         .replace(/RCTL\((.*?)\)/, 'RCtrl + $1')
+                         .replace(/RSFT\((.*?)\)/, 'RShift + $1')
+                         .replace(/RALT\((.*?)\)/, 'RAlt + $1')
+                         .replace(/RGUI\((.*?)\)/, 'RCmd + $1');
                          
             let keycap = `<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${uiKey}</span>`;
             
@@ -160,10 +164,10 @@ const MainUtils = {
         }
 
         if (hasContent) {
+            // FIX: Removed the redundant instructions text from the bottom here!
             return `
                 <strong class="block text-slate-800 text-xs mb-2">Decoded Sequence:</strong>
                 ${htmlOutput}
-                <p class="text-[11px] text-slate-500 mt-2 border-t border-slate-100 pt-2">Recreate this using the "Macro" tab in the MoErgo Editor.</p>
             `;
         }
 
@@ -293,7 +297,6 @@ export const UI = {
                     }
                 }
 
-                // Generate the Decoded Instructions
                 let abstractionHTML = '';
                 if (foundConfig) {
                     let decoded = MainUtils.translateQMKMacro(foundConfig);
@@ -308,7 +311,6 @@ export const UI = {
                     }
                 }
 
-                // Cleanup the raw Config code so we don't show the duplicate _reset function
                 let configDisplay = '';
                 if (foundConfig) {
                     let displayConfig = foundConfig;
