@@ -373,9 +373,7 @@ const Parser = {
         54,55,58,59
     ],
 
-    // Fill unused Go60 positions
-    fillerPositions: [48,49,50,51,52,53,56,57],
-    fillerKey: "&trans"
+
 },
     "LAYOUT_moonlander": {
         name: "Moonlander", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
@@ -585,10 +583,10 @@ self.onmessage = async function(e) {
             });
             
             // >>> THE EXPLICIT MAPPING FIX <<<
-let mapped = new Array(activeBoard.targetKeyCount)
-    .fill(null)
-    .map(() => ({ value: "&trans" }));
-
+let mapped = Array.from(
+    { length: activeBoard.targetKeyCount },
+    () => ({ value: "&trans" })
+);
 let collisions = [];
 
 astKeys.forEach((key, sourceIdx) => {
