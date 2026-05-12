@@ -350,30 +350,18 @@ const Parser = {
     targetBoard: "Go60",
     targetKeyCount: 60,
     isVoyager: true,
+
     templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Go60_default.json",
 
-    physicalMap: [
-        0,1,2,3,4,5, 6,7,8,9,10,11,
-        12,13,14,15,16,17, 18,19,20,21,22,23,
-        24,25,26,27,28,29, 30,31,32,33,34,35,
-        36,37,38,39,40,41, 42,43,44,45,46,47,
-        48,49,
-        50,51
-    ],
-
-    // Source index -> Go60 target position
     matrixMap: [
-        // Main 48 keys
         0,1,2,3,4,5,6,7,8,9,10,11,
         12,13,14,15,16,17,18,19,20,21,22,23,
         24,25,26,27,28,29,30,31,32,33,34,35,
         36,37,38,39,40,41,42,43,44,45,46,47,
 
-        // Voyager thumbs
+        // thumbs
         54,55,58,59
-    ],
-
-
+    ]
 },
     "LAYOUT_moonlander": {
         name: "Moonlander", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
@@ -587,37 +575,16 @@ let mapped = Array.from(
     { length: activeBoard.targetKeyCount },
     () => ({ value: "&trans" })
 );
-let collisions = [];
 
 astKeys.forEach((key, sourceIdx) => {
     if (!key) return;
 
-    // STEP 1:
-    // convert source matrix index -> physical position
-    let physicalIdx = sourceIdx;
-
-    if (activeBoard.physicalMap) {
-        physicalIdx = activeBoard.physicalMap[sourceIdx];
-    }
-
-    // invalid / dropped key
-    if (
-        physicalIdx === undefined ||
-        physicalIdx === null ||
-        physicalIdx < 0
-    ) {
-        return;
-    }
-
-    // STEP 2:
-    // convert physical position -> target board index
-    let targetIdx = physicalIdx;
+    let targetIdx = sourceIdx;
 
     if (activeBoard.matrixMap) {
-        targetIdx = activeBoard.matrixMap[physicalIdx];
+        targetIdx = activeBoard.matrixMap[sourceIdx];
     }
 
-    // invalid target
     if (
         targetIdx === undefined ||
         targetIdx === null ||
@@ -625,19 +592,6 @@ astKeys.forEach((key, sourceIdx) => {
         targetIdx >= activeBoard.targetKeyCount
     ) {
         return;
-    }
-
-    // collision detection
-    if (
-        mapped[targetIdx] &&
-        mapped[targetIdx].value !== "&trans"
-    ) {
-        collisions.push({
-            targetIdx,
-            existing: mapped[targetIdx],
-            incoming: key,
-            sourceIdx
-        });
     }
 
     mapped[targetIdx] = key;
