@@ -345,24 +345,11 @@ const Parser = {
     }
 };
 
-"LAYOUT_voyager": {
-    name: "Voyager",
-    targetBoard: "Go60",
-    targetKeyCount: 60,
-    isVoyager: true,
-
-    templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Go60_default.json",
-
-    matrixMap: [
-        0,1,2,3,4,5,6,7,8,9,10,11,
-        12,13,14,15,16,17,18,19,20,21,22,23,
-        24,25,26,27,28,29,30,31,32,33,34,35,
-        36,37,38,39,40,41,42,43,44,45,46,47,
-
-        // thumbs
-        54,55,58,59
-    ]
-},
+const BOARD_CONFIGS = {
+    "LAYOUT_voyager": {
+        name: "Voyager", targetBoard: "Go60", targetKeyCount: 60, isVoyager: true,
+        templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Go60_default.json"
+    },
     "LAYOUT_moonlander": {
         name: "Moonlander", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
         templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Glove80_default.json",
@@ -571,35 +558,29 @@ self.onmessage = async function(e) {
             });
             
             // >>> THE EXPLICIT MAPPING FIX <<<
-let mapped = Array.from(
-    { length: activeBoard.targetKeyCount },
-    () => ({ value: "&trans" })
-);
+            let mapped = new Array(activeBoard.targetKeyCount).fill(null).map(() => ({ value: "&trans" }));
+            
+            astKeys.forEach((key, i) => {
+                if (!key) return;
+                
+                let targetIdx = i;
 
-astKeys.forEach((key, sourceIdx) => {
-    if (!key) return;
+                if (activeBoard.name === "Voyager") {
+                    // Safe Go60 padding logic explicitly retained!
+                    if (i < 48) targetIdx = i;
+                    else if (i === 48) targetIdx = 50; 
+                    else if (i === 49) targetIdx = 51;
+                    else if (i === 50) targetIdx = 54;
+                    else if (i === 51) targetIdx = 55;
+                } else if (activeBoard.matrixMap) {
+                    // Pull the exact, explicit mapping index
+                    targetIdx = activeBoard.matrixMap[i];
+                }
 
-    let targetIdx = sourceIdx;
-
-    if (activeBoard.matrixMap) {
-        targetIdx = activeBoard.matrixMap[sourceIdx];
-    }
-
-    if (
-        targetIdx === undefined ||
-        targetIdx === null ||
-        targetIdx < 0 ||
-        targetIdx >= activeBoard.targetKeyCount
-    ) {
-        return;
-    }
-
-    mapped[targetIdx] = key;
-});
-
-if (collisions.length) {
-    console.warn("MATRIX COLLISIONS:", collisions);
-}
+                if (targetIdx !== undefined && targetIdx >= 0 && targetIdx < activeBoard.targetKeyCount) {
+                    mapped[targetIdx] = key;
+                }
+            });
             
             return mapped;
         });
