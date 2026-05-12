@@ -345,7 +345,6 @@ const Parser = {
     }
 };
 
-const BOARD_CONFIGS = {
 "LAYOUT_voyager": {
     name: "Voyager",
     targetBoard: "Go60",
@@ -353,28 +352,30 @@ const BOARD_CONFIGS = {
     isVoyager: true,
     templateUrl: "https://gist.githubusercontent.com/moosylog/a71d65a4b2de4215d7e226449f3cadb2/raw/ee1661e9adbe197285b50ef0bd8997f6a80e795c/Go60_default.json",
 
-    // Simplified: physicalMap not needed if C-array is already row-major (it is for standard LAYOUT_voyager)
-    // physicalMap: null,  // or remove the property entirely
-    physicalMap: [  // keep for safety / future custom layouts, but make it explicit identity + thumbs
-        0,1,2,3,4,5, 6,7,8,9,10,11,   // Row 1
-        12,13,14,15,16,17, 18,19,20,21,22,23, // Row 2
-        24,25,26,27,28,29, 30,31,32,33,34,35, // Row 3
-        36,37,38,39,40,41, 42,43,44,45,46,47, // Row 4
-        48,49,   // Left thumbs
-        50,51    // Right thumbs
+    physicalMap: [
+        0,1,2,3,4,5, 6,7,8,9,10,11,
+        12,13,14,15,16,17, 18,19,20,21,22,23,
+        24,25,26,27,28,29, 30,31,32,33,34,35,
+        36,37,38,39,40,41, 42,43,44,45,46,47,
+        48,49,
+        50,51
     ],
 
-    // Direct C-array index (source in LAYOUT call) → Go60 matrix position
+    // Source index -> Go60 target position
     matrixMap: [
-        /* Main grid - 1:1 */
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-        12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-        24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-        36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-        /* Thumbs - adjusted for Go60 layout */
-        50, 51,  // Left thumbs
-        54, 55   // Right thumbs
-    ]
+        // Main 48 keys
+        0,1,2,3,4,5,6,7,8,9,10,11,
+        12,13,14,15,16,17,18,19,20,21,22,23,
+        24,25,26,27,28,29,30,31,32,33,34,35,
+        36,37,38,39,40,41,42,43,44,45,46,47,
+
+        // Voyager thumbs
+        54,55,58,59
+    ],
+
+    // Fill unused Go60 positions
+    fillerPositions: [48,49,50,51,52,53,56,57],
+    fillerKey: "&trans"
 },
     "LAYOUT_moonlander": {
         name: "Moonlander", targetBoard: "Glove80", targetKeyCount: 80, isVoyager: false,
