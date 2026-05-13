@@ -4,10 +4,10 @@ const MainUtils = {
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
     },
     
-    isHoldTap: (expr) => {
-       if (!expr) return false;
-       return /^DUAL_FUNC\s*\(/i.test(expr);
-    },
+isHoldTap: (expr) => {
+    if (!expr) return false;
+    return /DUAL_FUNC/i.test(expr);
+},
 	
 	
     // Generic QMK Macro & Tap Dance Parser
