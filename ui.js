@@ -305,6 +305,152 @@ const MainUtils = {
 };
 
 export const UI = {
+    buildReport: (layerCount, state) => {
+        const reportContainer = document.getElementById('outputReport');
+
+        if (!reportContainer) {
+            return;
+        }
+
+        const warnInstances = Object.values(state.log?.warning || {})
+            .reduce((a, c) => a + (c.count || 0), 0);
+
+        const stdInstances = Object.values(state.log?.layer_binding || {})
+            .reduce((a, c) => a + (c.count || 0), 0);
+
+        const comboInstances = Object.values(state.log?.combo || {})
+            .reduce((a, c) => a + (c.count || 0), 0);
+
+        const mergedHoldTaps = UI.buildMergedHoldTaps(state);
+
+        const holdTapInstances = Object.values(mergedHoldTaps)
+            .reduce((a, c) => a + (c.count || 0), 0);
+
+        const totalMapped =
+            stdInstances +
+            comboInstances +
+            holdTapInstances;
+
+        const buildRows = (logCat = {}) => {
+            if (Object.keys(logCat).length === 0) {
+                return `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            🎉 Clean conversion!
+                        </td>
+                    </tr>
+                `;
+            }
+
+            return Object.entries(logCat).map(([original, data]) => {
+                return `
+                    <tr>
+                        <td class="code">
+                            <span class="keycap !border-slate-200 !shadow-none hover:translate-y-0">
+                                ${MainUtils.escapeHTML(original)}
+                            </span>
+                        </td>
+
+                        <td class="code">
+                            ${UI.formatKeycapString?.(data.translated || '') || MainUtils.escapeHTML(data.translated || '')}
+                        </td>
+
+                        <td class="reason">
+                            ${MainUtils.escapeHTML(data.reason || 'Auto-mapped successfully.')}
+                        </td>
+
+                        <td class="font-semibold text-slate-500 text-center">
+                            ${data.count || 0}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        reportContainer.innerHTML = `
+            <div class="mt-12">
+                <div class="stat-grid mb-8">
+                    <div class="stat-box">
+                        <div class="stat-num text-blue-600">
+                            ${layerCount}
+                        </div>
+                        <div class="stat-label">Layers</div>
+                    </div>
+
+                    <div class="stat-box">
+                        <div class="stat-num">
+                            ${totalMapped}
+                        </div>
+                        <div class="stat-label">Keys Auto-Mapped</div>
+                    </div>
+
+                    <div class="stat-box ${warnInstances > 0 ? 'warning' : ''}">
+                        <div class="stat-num">
+                            ${warnInstances}
+                        </div>
+                        <div class="stat-label">Actions Required</div>
+                    </div>
+                </div>
+
+                <details class="report-category" open>
+                    <summary>
+                        Standard Keys
+                    </summary>
+
+                    <div class="cat-content">
+                        <table>
+                            <tr>
+                                <th>Original Key</th>
+                                <th>Target</th>
+                                <th>Status</th>
+                                <th>Instances</th>
+                            </tr>
+
+                            ${buildRows(state.log?.layer_binding || {})}
+                        </table>
+                    </div>
+                </details>
+
+                <details class="report-category">
+                    <summary>
+                        Hold-Taps / Dual-Function
+                    </summary>
+
+                    <div class="cat-content">
+                        <table>
+                            <tr>
+                                <th>Original Key</th>
+                                <th>Target</th>
+                                <th>Status</th>
+                                <th>Instances</th>
+                            </tr>
+
+                            ${buildRows(mergedHoldTaps)}
+                        </table>
+                    </div>
+                </details>
+
+                <details class="report-category">
+                    <summary>
+                        Combos
+                    </summary>
+
+                    <div class="cat-content">
+                        <table>
+                            <tr>
+                                <th>Original Key</th>
+                                <th>Target</th>
+                                <th>Status</th>
+                                <th>Instances</th>
+                            </tr>
+
+                            ${buildRows(state.log?.combo || {})}
+                        </table>
+                    </div>
+                </details>
+            </div>
+        `;
+    },
     displayFatalError: (msg, stack = null) => {
         const reportContainer = document.getElementById('outputReport');
 
