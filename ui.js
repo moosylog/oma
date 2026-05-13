@@ -83,19 +83,15 @@ const MainUtils = {
 
 export const UI = {
     displayFatalError: (msg, stack = null) => {
-        const reportContainer = document.getElementById('outputReport');
-        if (reportContainer) {
-            reportContainer.innerHTML = `<div class="bg-red-50 p-8 text-center"><h4 class="text-red-900 font-bold">Error reading file</h4><p>${msg}</p></div>`;
-        }
+        console.error(msg, stack);
     },
 
     updateDropZone: (filename, isProcessing = false) => {
-        const dText = document.getElementById('dropText');
-        if (dText && isProcessing) dText.innerText = `⏳ Processing ${filename}...`;
+        const dz = document.getElementById('dropZone');
+        if (dz && isProcessing) dz.innerText = "Processing...";
     },
 
     formatKeycapString: (str) => {
-        if(str === "&none") return `<span class="keycap keycap-blank">&none</span>`;
         return `<span class="keycap">${MainUtils.escapeHTML(str)}</span>`;
     },
 
@@ -103,95 +99,106 @@ export const UI = {
         const reportContainer = document.getElementById('outputReport');
         if (!reportContainer) return;
 
-        // 1. Calculations
+        // --- Helper: The Unified "Card" Renderer (Restores ZSA Source Details) ---
+        const renderItemCard = (name, data, isDualFunc = false) => {
+            const count = data.count || 1;
+            const reason = data.reason || (isDualFunc ? "Convert DUAL_FUNC to ZMK hold-tap behavior" : "Rebuild as a Custom ZMK Macro.");
+            const config = data.config || (typeof data === 'string' ? data : '');
+            
+            // Build Contexts (Hardware Locations)
+            let contextHtml = '';
+            if (data.contexts && data.contexts.length > 0) {
+                let occurrences = data.contexts.map(c => {
+                    let colorDot = c.color ? `<span class="inline-block w-2 h-2 rounded-full mr-2" style="background-color: ${c.color}"></span>` : '';
+                    return `${colorDot}Layer ${c.layer} ➔ <strong>${c.pos}</strong>`;
+                }).join('<br>');
+                contextHtml = `<div class="mt-4 pt-4 border-t border-slate-200"><strong class="block text-[10px] uppercase text-slate-500 mb-1">Hardware Locations</strong><p class="text-[12px] text-slate-600 leading-relaxed">${occurrences}</p></div>`;
+            }
+
+            // Build Source Code Display
+            let sourceDisplay = '';
+            if (config) {
+                sourceDisplay = `
+                    <div class="mt-4">
+                        <strong class="block text-[11px] uppercase text-slate-500 mb-1.5">Exact Source Code & Parameters</strong>
+                        <div class="rounded-lg overflow-hidden bg-slate-800 border border-slate-700">
+                            <code class="block w-full p-3 text-emerald-400 text-xs font-mono break-all">${MainUtils.escapeHTML(name)}</code>
+                            <div class="border-t border-slate-700 bg-slate-900/50 p-3">
+                                <code class="block w-full text-blue-300 text-[11px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(config)}</code>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            return `
+                <details class="bg-white border border-slate-200 rounded-xl shadow-sm mb-3 group">
+                    <summary class="p-4 flex items-center justify-between cursor-pointer list-none hover:bg-slate-50">
+                        <span class="font-bold text-slate-700 font-mono">${MainUtils.escapeHTML(name)}</span>
+                        <span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded">${count} Instances</span>
+                    </summary>
+                    <div class="p-5 border-t border-slate-100 bg-slate-50/50">
+                        <div class="mb-4">
+                            <strong class="block text-[11px] uppercase text-slate-500 mb-1">ZMK Replacement Suggestion</strong>
+                            <p class="text-[13px] text-slate-800 font-medium">${MainUtils.escapeHTML(reason)}</p>
+                        </div>
+                        ${MainUtils.translateQMKMacro(config)}
+                        ${sourceDisplay}
+                        ${contextHtml}
+                    </div>
+                </details>`;
+        };
+
+        // --- Data Processing ---
         const warnInstances = Object.values(state.log.warning || {}).reduce((a, c) => a + c.count, 0);
         const realMacros = {};
         const dualFuncHoldTaps = {};
 
         Object.entries(state.macros || {}).forEach(([keyName, payload]) => {
             if (payload && payload.includes('DUAL_FUNC')) {
-                dualFuncHoldTaps[keyName] = payload;
+                dualFuncHoldTaps[keyName] = { config: payload, count: 1, reason: "Convert DUAL_FUNC to ZMK hold-tap behavior" };
             } else {
-                realMacros[keyName] = payload;
+                realMacros[keyName] = { config: payload, count: 1 };
             }
         });
 
-        const macroCount = Object.keys(realMacros).length;
-        const dualFuncCount = Object.keys(dualFuncHoldTaps).length;
-        const stdInstances = Object.values(state.log.layer_binding || {}).reduce((a, c) => a + c.count, 0);
-
-        // 2. Drilldown Helper (The missing recommendations logic)
-        const buildWarningDrilldown = (logCat) => {
-            if (Object.keys(logCat).length === 0) return `<div class="p-4 text-emerald-600">🎉 Clean conversion!</div>`;
-            return `<div class="flex flex-col gap-3 p-4">` + Object.entries(logCat).map(([original, data]) => {
-                let foundConfig = data.contexts?.find(c => c && c.config)?.config;
-                let decoded = foundConfig ? MainUtils.translateQMKMacro(foundConfig) : '';
-                return `
-                <details class="bg-white border border-slate-200 rounded-xl group">
-                    <summary class="p-4 flex items-center justify-between cursor-pointer list-none hover:bg-slate-50">
-                        <span class="font-bold text-slate-700 font-mono">${MainUtils.escapeHTML(original)}</span>
-                        <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 rounded">${data.count} Instances</span>
-                    </summary>
-                    <div class="p-5 border-t border-slate-100 bg-slate-50/50">
-                        <p class="text-[13px] text-slate-800 mb-4">${MainUtils.escapeHTML(data.reason)}</p>
-                        ${decoded ? `<div class="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">${decoded}</div>` : ''}
-                        <code class="block p-3 bg-slate-800 text-emerald-400 text-xs rounded">${MainUtils.escapeHTML(original)}</code>
-                    </div>
-                </details>`;
-            }).join('') + `</div>`;
-        };
-
-        const macroRows = Object.entries(realMacros).map(([macName, payload]) => `
-            <tr>
-                <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
-                <td class="payload align-top pt-4"><div class="bg-slate-900 p-2 rounded text-[10px] text-slate-400 font-mono">${MainUtils.escapeHTML(payload)}</div></td>
-                <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
-            </tr>`).join('');
-
-        const dualFuncRows = Object.entries(dualFuncHoldTaps).map(([macName, payload]) => `
-            <tr>
-                <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
-                <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
-            </tr>`).join('');
-
-        // 3. Render Output
+        // --- HTML Assembly ---
         reportContainer.innerHTML = `
-            <div class="checklist-container p-6 bg-white border rounded-xl shadow-sm">
-                <h3 class="text-lg font-bold mb-4">Migration Checklist</h3>
-                <p class="text-sm text-slate-600">Follow the steps below to finalize your MoErgo layout.</p>
+            <div class="checklist-container p-6 border rounded-xl mb-8">
+                <h3 class="text-lg font-bold text-slate-800 mb-2">Migration Checklist</h3>
+                <p class="text-sm text-slate-500">Follow these steps to finalize your setup.</p>
             </div>
 
-            <div class="mt-8 stat-grid">
-                <div class="stat-box"><div class="stat-num">${layerCount}</div><div class="stat-label">Layers</div></div>
-                <div class="stat-box warning"><div class="stat-num">${warnInstances}</div><div class="stat-label">Action Required</div></div>
+            <div class="stat-grid mb-8">
+                <div class="stat-box warning"><div class="stat-num">${warnInstances}</div><div class="stat-label">Actions Required</div></div>
+                <div class="stat-box"><div class="stat-num">${Object.keys(dualFuncHoldTaps).length}</div><div class="stat-label">Hold-Taps</div></div>
+                <div class="stat-box"><div class="stat-num">${Object.keys(realMacros).length}</div><div class="stat-label">Macros</div></div>
             </div>
 
-            <!-- SECTION 1: RECOMMENDATIONS / WARNINGS -->
-            <details class="report-category" open>
-                <summary>⚠️ Action Required: Rebuild these features (${warnInstances})</summary>
-                <div class="cat-content bg-slate-50/50">${buildWarningDrilldown(state.log.warning)}</div>
-            </details>
+            <!-- SECTION 1: RECOMMENDATIONS (Same level as others) -->
+            <div class="mb-10">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-orange-400"></span> Action Required: Recommendations
+                </h4>
+                ${Object.entries(state.log.warning || {}).map(([name, data]) => renderItemCard(name, data)).join('')}
+            </div>
 
-            <!-- SECTION 2: DUAL-FUNCTION (HOLD-TAP) -->
-            <details class="report-category" ${dualFuncCount > 0 ? 'open' : ''}>
-                <summary>↔️ Dual-Function Keys (Hold-Tap) (${dualFuncCount})</summary>
-                <div class="cat-content">
-                    ${dualFuncCount === 0 ? '<div class="p-4 text-slate-400">None found.</div>' : `<table><tr><th>Key ID</th><th>Suggested Behavior</th></tr>${dualFuncRows}</table>`}
-                </div>
-            </details>
+            <!-- SECTION 2: DUAL-FUNCTION (Same level) -->
+            <div class="mb-10">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span> Dual-Function (Hold-Tap)
+                </h4>
+                ${Object.keys(dualFuncHoldTaps).length === 0 ? '<p class="text-sm text-slate-400 p-4">None detected.</p>' : 
+                  Object.entries(dualFuncHoldTaps).map(([name, data]) => renderItemCard(name, data, true)).join('')}
+            </div>
 
-            <!-- SECTION 3: SEQUENTIAL MACROS -->
-            <details class="report-category">
-                <summary>⌨️ Sequential Macros (${macroCount})</summary>
-                <div class="cat-content">
-                    ${macroCount === 0 ? '<div class="p-4 text-slate-400">None found.</div>' : `<table><tr><th>Key ID</th><th>Original Code</th><th>Decoded</th></tr>${macroRows}</table>`}
-                </div>
-            </details>
-            
-            <details class="report-category">
-                <summary>✅ Standard Keys (${stdInstances})</summary>
-                <div class="cat-content"><p class="p-4 text-xs text-slate-500">Standard keys were mapped automatically to ZMK codes.</p></div>
-            </details>
+            <!-- SECTION 3: SEQUENTIAL MACROS (Same level) -->
+            <div class="mb-10">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Custom Macros
+                </h4>
+                ${Object.keys(realMacros).length === 0 ? '<p class="text-sm text-slate-400 p-4">No custom macros found.</p>' : 
+                  Object.entries(realMacros).map(([name, data]) => renderItemCard(name, data)).join('')}
+            </div>
         `;
     }
 };
