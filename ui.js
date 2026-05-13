@@ -4,6 +4,12 @@ const MainUtils = {
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
     },
     
+    isHoldTap: (expr) => {
+       if (!expr) return false;
+       return /^DUAL_FUNC\s*\(/i.test(expr);
+    },
+	
+	
     // Generic QMK Macro & Tap Dance Parser
     translateQMKMacro: (code) => {
         if (!code) return "Rebuild as a Custom ZMK Macro.";
@@ -363,18 +369,41 @@ export const UI = {
             `}).join('') + `</div>`;
         };
 
-        const macroRows = macroCount === 0 
-            ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
-            : Object.entries(state.macros).map(([macName, payload]) => `
-                <tr>
-                    <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
-                    <td class="payload w-2/5 align-top pt-4">
-                        <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
-                            <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
-                        </div>
-                    </td>
-                    <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
-                </tr>`).join('');
+const macroRows = macroCount === 0 
+    ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
+    : Object.entries(state.macros).map(([macName, payload]) => {
+        const isHT = MainUtils.isHoldTap(macName) || MainUtils.isHoldTap(payload);
+        
+        const typeLabel = isHT 
+            ? 'Hold-Tap / Dual Function' 
+            : 'Custom Macro';
+        
+        const helpText = isHT 
+            ? `<span class="text-amber-600 font-medium">This should be recreated as a <strong>hold-tap</strong> in ZMK.</span>`
+            : '';
+
+        return `
+            <tr>
+                <td class="code align-top pt-4">
+                    <span class="keycap">${MainUtils.escapeHTML(macName)}</span>
+                </td>
+                <td class="payload w-2/5 align-top pt-4">
+                    <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
+                        <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
+                    </div>
+                </td>
+                <td class="reason align-top pt-4 pl-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-md 
+                            ${isHT ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">
+                            ${typeLabel}
+                        </span>
+                    </div>
+                    ${MainUtils.translateQMKMacro(payload)}
+                    ${helpText}
+                </td>
+            </tr>`;
+    }).join('');
 
         reportContainer.innerHTML = `
             <div class="checklist-container">
