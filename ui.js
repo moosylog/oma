@@ -331,43 +331,85 @@ export const UI = {
             comboInstances +
             holdTapInstances;
 
-        const buildRows = (logCat = {}) => {
-            if (Object.keys(logCat).length === 0) {
-                return `
-                    <tr>
-                        <td colspan="4" class="empty-state">
-                            🎉 Clean conversion!
-                        </td>
-                    </tr>
-                `;
-            }
-
-            return Object.entries(logCat).map(([original, data]) => {
-                return `
-                    <tr>
-                        <td class="code">
-                            <span class="keycap !border-slate-200 !shadow-none hover:translate-y-0">
-                                ${MainUtils.escapeHTML(original)}
-                            </span>
-                        </td>
-
-                        <td class="code">
-                            ${UI.formatKeycapString?.(data.translated || '') || MainUtils.escapeHTML(data.translated || '')}
-                        </td>
-
-                        <td class="reason">
-                            ${MainUtils.escapeHTML(data.reason || 'Auto-mapped successfully.')}
-                        </td>
-
-                        <td class="font-semibold text-slate-500 text-center">
-                            ${data.count || 0}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        };
+        const totalNeedsRebuild =
+            warnInstances +
+            Object.keys(state.macros || {}).length;
 
         reportContainer.innerHTML = `
+            <div class="checklist-container">
+                <div class="p-6 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between no-print">
+                    <h3 class="text-base font-bold text-slate-800">
+                        Your Setup Checklist
+                    </h3>
+
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                        ${totalNeedsRebuild > 0 ? '4' : '3'} Steps
+                    </span>
+                </div>
+
+                <div class="flex flex-col">
+                    <div class="checklist-item">
+                        <div class="step-circle">1</div>
+
+                        <div class="mt-0.5">
+                            <strong class="text-slate-900 block text-[15px] mb-1">
+                                Download your Layout
+                            </strong>
+
+                            <p class="text-[13px] text-slate-500 leading-relaxed max-w-xl">
+                                Download your converted layout.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="checklist-item">
+                        <div class="step-circle">2</div>
+
+                        <div class="mt-0.5">
+                            <strong class="text-slate-900 block text-[15px] mb-1">
+                                Import into Layout Editor
+                            </strong>
+
+                            <p class="text-[13px] text-slate-500 leading-relaxed max-w-xl">
+                                Open the MoErgo Layout Editor and import your file.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="checklist-item">
+                        <div class="step-circle">3</div>
+
+                        <div class="mt-0.5">
+                            <strong class="text-slate-900 block text-[15px] mb-1">
+                                Rename your Layers
+                            </strong>
+
+                            <p class="text-[13px] text-slate-500 leading-relaxed max-w-xl">
+                                Re-label generic layer names inside the editor.
+                            </p>
+                        </div>
+                    </div>
+
+                    ${totalNeedsRebuild > 0 ? `
+                        <div class="checklist-item bg-orange-50/30">
+                            <div class="step-circle step-circle-warn">4</div>
+
+                            <div class="mt-0.5">
+                                <strong class="text-slate-900 block text-[15px] mb-1">
+                                    Rebuild your Advanced Features
+                                </strong>
+
+                                <p class="text-[13px] text-slate-500 leading-relaxed max-w-xl">
+                                    Some macros or advanced behaviors require manual ZMK rebuilding.
+                                    See the Action Required section below.
+                                </p>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="mt-12">
             <div class="mt-12">
                 <div class="stat-grid mb-8">
                     <div class="stat-box">
@@ -393,6 +435,54 @@ export const UI = {
                 </div>
 
                 <details class="report-category" open>
+                    <summary>
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+
+                        Action Required: Rebuild these features
+
+                        <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                            ${warnInstances}
+                        </span>
+                    </summary>
+
+                    <div class="cat-content bg-slate-50/50 pb-2">
+                        ${Object.keys(state.log?.warning || {}).length === 0
+                            ? `<div class="empty-state p-4">🎉 No advanced rebuilds required.</div>`
+                            : Object.entries(state.log.warning).map(([original, data]) => `
+                                <details class="bg-white border border-slate-200 rounded-xl shadow-sm group print-expand-item m-3">
+                                    <summary class="p-4 flex items-center justify-between cursor-pointer list-none hover:bg-slate-50 transition-colors rounded-xl outline-none">
+                                        <span class="font-bold text-slate-700 text-sm font-mono truncate max-w-[400px]">
+                                            ${MainUtils.escapeHTML(original)}
+                                        </span>
+
+                                        <span class="bg-slate-100 text-slate-500 text-[11px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                            ${data.count || 0} Instances
+                                        </span>
+                                    </summary>
+
+                                    <div class="p-5 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
+                                        <p class="text-[13px] text-slate-800 font-medium leading-relaxed mb-4">
+                                            ${MainUtils.escapeHTML(data.reason || 'Manual rebuild required.')}
+                                        </p>
+
+                                        ${data.config
+                                            ? `
+                                                <div class="rounded-lg overflow-hidden shadow-inner bg-slate-800 border border-slate-700">
+                                                    <code class="block w-full p-3 text-emerald-400 text-xs font-mono break-all whitespace-pre-wrap">
+                                                        ${MainUtils.escapeHTML(data.config)}
+                                                    </code>
+                                                </div>
+                                            `
+                                            : ''}
+                                    </div>
+                                </details>
+                            `).join('')}
+                    </div>
+                </details>
+
+                <details class="report-category">
                     <summary>
                         Standard Keys
                     </summary>
