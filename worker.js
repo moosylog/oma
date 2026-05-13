@@ -565,13 +565,19 @@ self.onmessage = async function(e) {
                 
                 let targetIdx = i;
 
-                if (activeBoard.name === "Voyager") {
-                    // Safe Go60 padding logic explicitly retained!
-                    if (i < 48) targetIdx = i;
-                    else if (i === 48) targetIdx = 50; 
-                    else if (i === 49) targetIdx = 51;
-                    else if (i === 50) targetIdx = 54;
-                    else if (i === 51) targetIdx = 55;
+if (activeBoard.name === "Voyager") {
+                    // Map Voyager 52-key matrix to Go60 60-key matrix
+                    if (i < 48) {
+                        targetIdx = i;
+                    } else if (i === 48) {
+                        targetIdx = 54; // Left Inner Thumb
+                    } else if (i === 49) {
+                        targetIdx = 55; // Left Outer Thumb
+                    } else if (i === 50) {
+                        targetIdx = 58; // Right Inner Thumb
+                    } else if (i === 51) {
+                        targetIdx = 59; // Right Outer Thumb
+                    }
                 } else if (activeBoard.matrixMap) {
                     // Pull the exact, explicit mapping index
                     targetIdx = activeBoard.matrixMap[i];
