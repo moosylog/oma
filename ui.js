@@ -278,9 +278,27 @@ export const UI = {
         const reportContainer = document.getElementById('outputReport');
         if (!reportContainer) return;
 
-        const warnInstances = Object.values(state.log.warning || {}).reduce((a, c) => a + c.count, 0);
-        const macroCount = Object.keys(state.macros || {}).length;
-        const totalNeedsRebuild = warnInstances + macroCount;
+const warnInstances = Object.values(state.log.warning || {}).reduce((a, c) => a + c.count, 0);
+
+// === SPLIT DUAL_FUNC FROM MACROS ===
+const realMacros = {};
+const dualFuncHoldTaps = {};
+
+Object.entries(state.macros || {}).forEach(([keyName, payload]) => {
+    if (payload && payload.includes('DUAL_FUNC')) {
+        dualFuncHoldTaps[keyName] = {
+            translated: "Hold-Tap",
+            reason: "Convert DUAL_FUNC to ZMK hold-tap behavior",
+            count: 1,
+            config: payload
+        };
+    } else {
+        realMacros[keyName] = payload;
+    }
+});
+
+const macroCount = Object.keys(realMacros).length;
+const totalNeedsRebuild = warnInstances + macroCount;
 
         const stdInstances = Object.values(state.log.layer_binding || {}).reduce((a, c) => a + c.count, 0);
         const htInstances = Object.values(state.log.hold_tap || {}).reduce((a, c) => a + c.count, 0);
@@ -388,18 +406,18 @@ export const UI = {
             `}).join('') + `</div>`;
         };
 
-        const macroRows = macroCount === 0 
-            ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
-            : Object.entries(state.macros).map(([macName, payload]) => `
-                <tr>
-                    <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
-                    <td class="payload w-2/5 align-top pt-4">
-                        <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
-                            <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
-                        </div>
-                    </td>
-                    <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
-                </tr>`).join('');
+const macroRows = macroCount === 0 
+    ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
+    : Object.entries(realMacros).map(([macName, payload]) => `
+        <tr>
+            <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
+            <td class="payload w-2/5 align-top pt-4">
+                <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
+                    <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
+                </div>
+            </td>
+            <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
+        </tr>`).join('');
 
         reportContainer.innerHTML = `
             <div class="checklist-container">
@@ -485,7 +503,7 @@ export const UI = {
                         <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
                         Hold-Taps / Dual-Function <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">${htInstances}</span>
                     </summary>
-                    <div class="cat-content"><table><tr><th>Original Key</th><th>MoErgo Target</th><th>Status</th><th class="text-center">Instances</th></tr>${buildRows(state.log.hold_tap)}</table></div>
+                    <div class="cat-content"><table><tr><th>Original Key</th><th>MoErgo Target</th><th>Status</th><th class="text-center">Instances</th></tr>${buildRows({ ...state.log.hold_tap, ...dualFuncHoldTaps })}</table></div>
                 </details>
                 
                 <details class="report-category">
