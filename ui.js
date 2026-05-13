@@ -4,9 +4,12 @@ const MainUtils = {
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
     },
     
-isHoldTap: (expr) => {
-    if (!expr) return false;
-    return /DUAL_FUNC/i.test(expr);
+// Inside MainUtils
+isHoldTap: (name, payload = '') => {
+    if (!name && !payload) return false;
+    
+    const str = String(name + ' ' + payload);
+    return str.includes('DUAL_FUNC');
 },
 	
 	
@@ -372,33 +375,42 @@ export const UI = {
 const macroRows = macroCount === 0 
     ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
     : Object.entries(state.macros).map(([macName, payload]) => {
-        const isHT = MainUtils.isHoldTap(macName) || MainUtils.isHoldTap(payload);
+        
+        const isHT = MainUtils.isHoldTap(macName, payload);
         
         const typeLabel = isHT 
-            ? 'Hold-Tap / Dual Function' 
+            ? 'Hold-Tap (Dual Function)' 
             : 'Custom Macro';
         
-        const helpText = isHT 
-            ? `<span class="text-amber-600 font-medium">This should be recreated as a <strong>hold-tap</strong> in ZMK.</span>`
-            : '';
+        const badgeClass = isHT 
+            ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+            : 'bg-purple-100 text-purple-700';
+
+        let helpText = '';
+        if (isHT) {
+            helpText = `
+                <div class="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-lg text-[13px] text-amber-800">
+                    <strong>ZMK Migration:</strong> This <code>DUAL_FUNC</code> should be recreated as a 
+                    <strong>hold-tap</strong> behavior.<br>
+                    Example: <code class="font-mono bg-white px-1 rounded">&lt; 12 W</code>
+                </div>`;
+        }
 
         return `
             <tr>
-                <td class="code align-top pt-4">
-                    <span class="keycap">${MainUtils.escapeHTML(macName)}</span>
-                </td>
+                <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
                 <td class="payload w-2/5 align-top pt-4">
                     <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
-                        <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
+                        <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload || '')}</pre>
                     </div>
                 </td>
                 <td class="reason align-top pt-4 pl-4">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-md 
-                            ${isHT ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-block px-3 py-1 text-xs font-bold rounded-lg ${badgeClass}">
                             ${typeLabel}
                         </span>
                     </div>
+                    
                     ${MainUtils.translateQMKMacro(payload)}
                     ${helpText}
                 </td>
