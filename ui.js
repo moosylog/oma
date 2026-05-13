@@ -12,16 +12,22 @@ isHoldTap: (name, payload = '') => {
 	
 	
     // Generic QMK Macro & Tap Dance Parser
-    translateQMKMacro: (code) => {
-        if (!code) return "Rebuild as a Custom ZMK Macro.";
+translateQMKMacro: (code) => {
+    if (!code) return "Rebuild as a Custom ZMK Macro.";
     
 	// === DUAL_FUNC → Hold-Tap (Highest priority) ===
-    if (code.includes('DUAL_FUNC')) {
+if (code.includes('DUAL_FUNC')) {
         return `
             <strong class="block text-slate-800 text-xs mb-2">Hold-Tap Behavior</strong>
-            <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg text-slate-700">
-                This is a <strong>DUAL_FUNC</strong> (Hold-Tap).<br><br>
-                In ZMK, recreate it using a <strong>hold-tap</strong> behavior.
+            <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                <div class="flex items-center gap-2">
+                    <span class="font-mono text-blue-700">DUAL_FUNC</span>
+                    <span class="text-slate-400">→</span>
+                    <span class="font-medium text-slate-700">Hold-Tap / Dual-Function Key</span>
+                </div>
+                <p class="mt-2 text-[13px] text-slate-600">
+                    This should be recreated in ZMK using a <strong>hold-tap</strong> behavior.
+                </p>
             </div>`;
     }
 		
