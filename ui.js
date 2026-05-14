@@ -348,19 +348,20 @@ const totalNeedsRebuild = warnInstances + macroCount;
                     }
                 }
 
-                let abstractionHTML = '';
-                if (foundConfig) {
-                    let decoded = MainUtils.translateQMKMacro(foundConfig);
-                    if (decoded !== "Rebuild as a Custom ZMK Macro.") {
-                        abstractionHTML = `
-                            <div class="mb-4">
-                                <div class="p-3 bg-indigo-50/40 border border-indigo-100 rounded-lg shadow-sm">
-                                    ${decoded}
-                                </div>
-                            </div>
-                        `;
-                    }
-                }
+let abstractionHTML = '';
+let isDualFunc = foundConfig && foundConfig.includes('DUAL_FUNC');
+if (foundConfig) {
+    let decoded = MainUtils.translateQMKMacro(foundConfig);
+    if (decoded !== "Rebuild as a Custom ZMK Macro.") {
+        abstractionHTML = `
+            <div class="mb-4">
+                <div class="p-3 ${isDualFunc ? 'bg-blue-50/40 border border-blue-100' : 'bg-indigo-50/40 border border-indigo-100'} rounded-lg shadow-sm">
+                    ${decoded}
+                </div>
+            </div>
+        `;
+    }
+}
 
                 let configDisplay = '';
                 if (foundConfig) {
@@ -386,10 +387,10 @@ const totalNeedsRebuild = warnInstances + macroCount;
                         <span class="bg-slate-100 text-slate-500 text-[11px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${data.count} Instances</span>
                     </summary>
                     <div class="p-5 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
-                        <div class="mb-4">
-                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">ZMK Replacement Suggestion</strong>
-                            <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${MainUtils.escapeHTML(data.reason)}</p>
-                        </div>
+<div class="mb-4">
+    <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">ZMK Replacement Suggestion</strong>
+    <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${isDualFunc ? 'Convert to a ZMK hold-tap behavior.' : MainUtils.escapeHTML(data.reason)}</p>
+</div>
                         
                         ${abstractionHTML}
 
