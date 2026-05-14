@@ -298,10 +298,11 @@ Object.entries(state.macros || {}).forEach(([keyName, payload]) => {
 });
 
 const macroCount = Object.keys(realMacros).length;
-const totalNeedsRebuild = warnInstances + macroCount;
+const totalNeedsRebuild = warnInstances + macroCount + Object.keys(dualFuncHoldTaps).length;
+
 
         const stdInstances = Object.values(state.log.layer_binding || {}).reduce((a, c) => a + c.count, 0);
-        const htInstances = Object.values(state.log.hold_tap || {}).reduce((a, c) => a + c.count, 0);
+        const htInstances = Object.values(state.log.hold_tap || {}).reduce((a, c) => a + c.count, 0) + Object.keys(dualFuncHoldTaps).length;
         const comboInstances = Object.values(state.log.combo || {}).reduce((a, c) => a + c.count, 0);
         const totalMapped = stdInstances + htInstances + comboInstances;
 
@@ -349,7 +350,7 @@ const totalNeedsRebuild = warnInstances + macroCount;
                 }
 
 let abstractionHTML = '';
-let isDualFunc = foundConfig && foundConfig.includes('DUAL_FUNC');
+let isDualFunc = !!(foundConfig && foundConfig.includes('DUAL_FUNC'));
 if (foundConfig && !isDualFunc) {
     let decoded = MainUtils.translateQMKMacro(foundConfig);
     if (decoded !== "Rebuild as a Custom ZMK Macro.") {
@@ -417,7 +418,7 @@ const macroRows = macroCount === 0
                     <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
                 </div>
             </td>
-            <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
+            <td class="reason align-top pt-4 pl-4">${payload && payload.includes('DUAL_FUNC') ? 'Moved to Hold-Taps section.' : MainUtils.translateQMKMacro(payload)}</td>
         </tr>`).join('');
 
         reportContainer.innerHTML = `
