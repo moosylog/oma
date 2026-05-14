@@ -350,12 +350,12 @@ const totalNeedsRebuild = warnInstances + macroCount;
 
 let abstractionHTML = '';
 let isDualFunc = foundConfig && foundConfig.includes('DUAL_FUNC');
-if (foundConfig) {
+if (foundConfig && !isDualFunc) {
     let decoded = MainUtils.translateQMKMacro(foundConfig);
     if (decoded !== "Rebuild as a Custom ZMK Macro.") {
         abstractionHTML = `
             <div class="mb-4">
-                <div class="p-3 ${isDualFunc ? 'bg-blue-50/40 border border-blue-100' : 'bg-indigo-50/40 border border-indigo-100'} rounded-lg shadow-sm">
+                <div class="p-3 bg-indigo-50/40 border border-indigo-100 rounded-lg shadow-sm">
                     ${decoded}
                 </div>
             </div>
