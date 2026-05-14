@@ -29,12 +29,12 @@ const Utils = {
     },
     getZmkSuggestion: (tok) => {
         if (!tok) return "Requires a custom ZMK Behavior.";
-        if (tok.includes('ALL_T')) return "ZMK does not natively support holding all modifiers. Build a custom macro.";
-        if (tok.includes('TD(') || tok.includes('DANCE_')) return "Rebuild using ZMK Tap-Dance (&td) or Mod-Morph (&morph).";
-        if (tok.includes('QK_LLCK')) return "Rebuild using ZMK Sticky Layer (&sl) or Toggle Layer (&tog).";
-        if (tok.includes('MAC_') || tok.includes('PC_')) return "Recreate as a custom ZMK Macro (&macro).";
-        if (tok.includes('NAVIGATOR') || tok.includes('MS_JIGGLER') || tok.includes('SCROLL') || tok.includes('MS_DBL_CLICK')) return "Requires native ZMK Mouse Keys bindings.";
-        if (tok.includes('LAYER_COLOR') || tok.includes('RGB') || tok.includes('HSV_')) return "Rebuild using ZMK RGB Underglow behaviors (&rgb_ug).";
+        if (tok.includes('ALL_T')) return "Tap for key, Hold for Hyper (Ctrl+Shift+Alt+GUI). Recreate using MoErgo Layout Editor Hold-Tap.";
+        if (tok.includes('TD(') || tok.includes('DANCE_')) return "Tap Dance: tap once for key1, tap twice for key2. Recreate using MoErgo Layout Editor Tap-Dance.";
+        if (tok.includes('QK_LLCK')) return "Lock/unlock the currently active layer. Recreate Layer Lock using ZMK Sticky Layer (&sl) or Toggle Layer (&tog).";
+        if (tok.includes('MAC_') || tok.includes('PC_')) return "Recreate as a MoErgo Layout Editor Macro.";
+        if (tok.includes('NAVIGATOR') || tok.includes('MS_JIGGLER') || tok.includes('SCROLL') || tok.includes('MS_DBL_CLICK')) return "Rebuild using MoErgo Layout Editor Mouse Keys bindings.";
+        if (tok.includes('LAYER_COLOR') || tok.includes('RGB') || tok.includes('HSV_')) return "Recreate using MoErgo Layout Editor RGB Underglow Behaviors (&rgb_ug).";
         if (tok.includes('LCTL(KC_MS') || tok.includes('LSFT(KC_MS')) return "ZMK cannot mix mouse clicks and keyboard modifiers on a single key. Rebuild as Macro.";
         if (tok.startsWith('LM(')) return "ZMK does not natively support holding a Layer + Modifier simultaneously.";
         return "Requires a custom ZMK Behavior or Macro setup.";
