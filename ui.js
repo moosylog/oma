@@ -13,7 +13,7 @@ isHoldTap: (name, payload = '') => {
 	
     // Generic QMK Macro & Tap Dance Parser
 translateQMKMacro: (code) => {
-    if (!code) return "Rebuild as a Custom ZMK Macro.";
+    if (!code) return "Rebuild as a ZMK <strong>Macro</strong> Behavior in the MoErgo Layout Editor.";
     
 	// === DUAL_FUNC → Hold-Tap (Highest priority) ===
 if (code.includes('DUAL_FUNC')) {
@@ -26,7 +26,7 @@ if (code.includes('DUAL_FUNC')) {
                     <span class="font-medium text-slate-700">Hold-Tap / Dual-Function Key</span>
                 </div>
                 <p class="mt-2 text-[13px] text-slate-600">
-                    This should be recreated in ZMK using a <strong>hold-tap</strong> behavior.
+                    Rebuild as a ZMK <strong>Hold-Tap</strong> Behavior in the MoErgo Layout Editor.
                 </p>
             </div>`;
     }
@@ -204,7 +204,7 @@ if (code.includes('DUAL_FUNC')) {
             `;
         }
 
-        return "Rebuild as a Custom ZMK Macro.";
+        return "Rebuild as a ZMK <strong>Macro</strong> Behavior in the MoErgo Layout Editor.";
     }
 };
 
@@ -288,7 +288,7 @@ Object.entries(state.macros || {}).forEach(([keyName, payload]) => {
     if (payload && payload.includes('DUAL_FUNC')) {
         dualFuncHoldTaps[keyName] = {
             translated: "Hold-Tap",
-            reason: "Convert DUAL_FUNC to ZMK hold-tap behavior",
+            reason: "Rebuild as a ZMK <strong>Hold-Tap</strong> Behavior in the MoErgo Layout Editor.",
             count: 1,
             config: payload
         };
@@ -353,7 +353,7 @@ let abstractionHTML = '';
 let isDualFunc = !!(foundConfig && foundConfig.includes('DUAL_FUNC'));
 if (foundConfig && !isDualFunc) {
     let decoded = MainUtils.translateQMKMacro(foundConfig);
-    if (decoded !== "Rebuild as a Custom ZMK Macro.") {
+    if (decoded !== "Rebuild as a ZMK <strong>Macro</strong> Behavior in the MoErgo Layout Editor.") {
         abstractionHTML = `
             <div class="mb-4">
                 <div class="p-3 bg-indigo-50/40 border border-indigo-100 rounded-lg shadow-sm">
@@ -390,7 +390,7 @@ if (foundConfig && !isDualFunc) {
                     <div class="p-5 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
 <div class="mb-4">
     <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">ZMK Replacement Suggestion</strong>
-    <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${isDualFunc ? 'Convert to a ZMK hold-tap behavior.' : MainUtils.escapeHTML(data.reason)}</p>
+    <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${isDualFunc ? 'Convert to a ZMK Hold-Tap Behavior.' : MainUtils.escapeHTML(data.reason)}</p>
 </div>
                         
                         ${abstractionHTML}
