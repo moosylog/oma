@@ -93,6 +93,7 @@ OMA preserves as much of your Oryx setup as possible.
 - **Media & System Keys** → Fully mapped  
 - **Mouse Keys** → Translated to MoErgo controls  
 - **RGB & Colors** → Converted to compatible formats  
+- **Tap-Dance** → ❌ not available in Layout Editor as native behavior
 
 ---
 
