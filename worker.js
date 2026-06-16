@@ -221,115 +221,14 @@ const Parser = {
         return { value: resolved };
     },
 
-    // Parses a state.tapDances[DANCE_X] C block and returns a ZMK AST node.
-    // Strategy:
-    //   SINGLE_TAP + DOUBLE_TAP only  → &td_NAME with 2 bindings in tapDances[]
-    //   SINGLE_TAP + SINGLE_HOLD only → degrade to &mt (hold-tap, no tap-dance needed)
-    //   3+ tap slots                  → &td_NAME with N bindings
-    //   DOUBLE_HOLD / exotic          → warning, &none
-    // Converts a QMK ST_MACRO_* case body into a ZMK macro behavior definition.
-    // Registers in state.macroDefs and returns the binding reference { value: "&mac_NAME", params: [] }.
-    // ZMK macro bindings require &macro_tap / &macro_press / &macro_release wrappers.
-    parseMacroToZmk: (macroName, rawCaseBlock, state, context) => {
-        // Derive a short, safe ZMK name: ST_MACRO_FOO_BAR → &mac_foo_bar
-        const zmkName = '&mac_' + macroName.replace(/^ST_MACRO_/i, '').toLowerCase().replace(/[^a-z0-9]/g, '_');
-
-        // Already registered (same macro referenced on multiple keys)?
-        if (state.macroDefs.find(d => d.name === zmkName)) return { value: zmkName, params: [] };
-
-        const bindings = [];
-
-        // Walk every tap_code16 / register_code16 / tap_code / register_code call in order.
-        // register_code  → &macro_press  +  &macro_release pair (hold then release)
-        // tap_code       → &macro_tap (press+release in one step)
-        const callRegex = /(register_code16|unregister_code16|register_code|unregister_code|tap_code16|tap_code)\(\s*(.*?)\s*\)/g;
-        let m;
-        while ((m = callRegex.exec(rawCaseBlock)) !== null) {
-            const call = m[1], rawKey = m[2].trim();
-            const keyAst = Parser.parseMacroParam(rawKey, state, context);
-            if (!keyAst || keyAst.value === 'none') continue;
-            // Wrap bare keycodes in &kp
-            const keyBinding = keyAst.value.startsWith('&')
-                ? keyAst
-                : { value: '&kp', params: [keyAst] };
-
-            if (call.startsWith('tap_code')) {
-                bindings.push({ value: '&macro_tap',     params: [] });
-                bindings.push(keyBinding);
-            } else if (call.startsWith('register_code')) {
-                bindings.push({ value: '&macro_press',   params: [] });
-                bindings.push(keyBinding);
-            } else if (call.startsWith('unregister_code')) {
-                bindings.push({ value: '&macro_release', params: [] });
-                bindings.push(keyBinding);
-            }
-        }
-
-        if (bindings.length === 0) return null; // nothing parseable → caller emits &none
-
-        state.macroDefs.push({
-            name: zmkName,
-            description: `OMA: auto-converted from ${macroName}`,
-            waitMs: 30,
-            tapMs: 30,
-            bindings
-        });
-
-        Utils.logConversion(state, macroName, zmkName, 'layer_binding', 'Auto-converted Oryx macro to ZMK macro behavior.');
-        return { value: zmkName, params: [] };
-    },
-
-    // Converts a DUAL_FUNC(...) hold-tap token into a &ht_auto_HOLD_TAP definition.
-    // Registers in state.holdTapDefs and returns the binding reference.
-    parseHoldTapToZmk: (tok, state, context) => {
-        // DUAL_FUNC(hold_kc, tap_kc)  or  DUAL_FUNC(hold_kc, tap_kc, tapping_term)
-        const inner = tok.match(/^DUAL_FUNC\(\s*(.*)\s*\)$/i);
-        if (!inner) return null;
-        const parts = Parser.splitQmkKeys(inner[1]);
-        if (parts.length < 2) return null;
-
-        const holdAst = Parser.parseMacroParam(parts[0].trim(), state, context);
-        const tapAst  = Parser.parseMacroParam(parts[1].trim(), state, context);
-        if (!holdAst || holdAst.value === 'none' || !tapAst || tapAst.value === 'none') return null;
-
-        const holdLabel = holdAst.params?.length ? holdAst.value + '_' + holdAst.params.map(p => p.value).join('_') : holdAst.value;
-        const tapLabel  = tapAst.value;
-        const htName = `&ht_auto_${holdLabel}_${tapLabel}`.toLowerCase().replace(/[^a-z0-9_&]/g, '_');
-
-        if (!state.holdTapDefs.find(d => d.name === htName)) {
-            const tappingTermMs = parts[2] ? parseInt(parts[2]) || state.config.tappingTerm : state.config.tappingTerm;
-            // Hold binding: wrap bare modifier in &kp
-            const holdBinding = holdAst.value.startsWith('&') ? holdAst : { value: '&kp', params: [holdAst] };
-            const tapBinding  = tapAst.value.startsWith('&')  ? tapAst  : { value: '&kp', params: [tapAst] };
-            state.holdTapDefs.push({
-                name: htName,
-                description: `OMA: DUAL_FUNC hold=${holdLabel} tap=${tapLabel}`,
-                tappingTermMs,
-                quickTapMs: -1,
-                requirePriorIdleMs: 0,
-                holdTriggerOnRelease: false,
-                bindings: [holdBinding, tapBinding]
-            });
-        }
-
-        Utils.logConversion(state, tok, htName, 'hold_tap', 'Auto-converted Oryx DUAL_FUNC to ZMK Hold-Tap behavior.');
-        return { value: htName, params: [] };
-    },
-
     parseTapDance: (danceName, rawBlock, state, context) => {
-        // Strip the _reset half so we only parse the _finished function body
         const finishedOnly = rawBlock.split(/void\s+[a-zA-Z0-9_]+_reset/)[0];
 
-        // Extract a single tap_code16 / register_code16 / tap_code / register_code call
-        // from a case block, returning the raw keycode string or null.
         const extractKeyFromCase = (caseId, src) => {
-            let caseRegex = new RegExp(`case\\s+${caseId}\\s*:(.*?)(?:break;|case\\s+[A-Z_]+:|\\})`, 's');
-            let m = src.match(caseRegex);
+            let m = src.match(new RegExp(`case\\s+${caseId}\\s*:(.*?)(?:break;|case\\s+[A-Z_]+:|\\})`, 's'));
             if (!m) return null;
-            let action = m[1];
-            // Look for any of the four QMK key-sending calls
-            let callMatch = action.match(/(?:tap_code16|register_code16|tap_code|register_code)\(\s*(.*?)\s*\)\s*;/);
-            return callMatch ? callMatch[1].trim() : null;
+            let call = m[1].match(/(?:tap_code16|register_code16|tap_code|register_code)\(\s*(.*?)\s*\)\s*;/);
+            return call ? call[1].trim() : null;
         };
 
         const singleTapRaw  = extractKeyFromCase('SINGLE_TAP',  finishedOnly);
@@ -337,7 +236,7 @@ const Parser = {
         const tripleTapRaw  = extractKeyFromCase('TRIPLE_TAP',  finishedOnly);
         const singleHoldRaw = extractKeyFromCase('SINGLE_HOLD', finishedOnly);
 
-        // ── Case 1: SINGLE_TAP + SINGLE_HOLD only → degrade to &mt ──────────────
+        // SINGLE_TAP + SINGLE_HOLD only → degrade to &mt
         if (singleTapRaw && singleHoldRaw && !doubleTapRaw && !tripleTapRaw) {
             let tapAst  = Parser.parseMacroParam(singleTapRaw,  state, context);
             let holdAst = Parser.parseMacroParam(singleHoldRaw, state, context);
@@ -347,54 +246,40 @@ const Parser = {
             return { value: '&mt', params: [holdAst, tapAst] };
         }
 
-        // ── Case 2: Has at least SINGLE_TAP (± DOUBLE_TAP ± TRIPLE_TAP) → &td ──
+        // 1–3 tap slots → &td
         const tapSlots = [singleTapRaw, doubleTapRaw, tripleTapRaw].filter(Boolean);
-        if (tapSlots.length === 0) return null;  // nothing useful extracted
+        if (tapSlots.length === 0) return null;
 
-        // Ensure every binding node conforms to the recursive schema:
-        // { value: string, params: [...] }  — params must always be an array.
+        // Recursively enforce { value, params: [] } schema on every node
         const enforceSchema = (node) => {
             if (!node) return { value: '&none' };
-            const out = { value: node.value };
-            if (Array.isArray(node.params) && node.params.length > 0) {
+            const out = { value: node.value, params: [] };
+            if (Array.isArray(node.params) && node.params.length > 0)
                 out.params = node.params.map(enforceSchema);
-            } else {
-                out.params = [];
-            }
             return out;
         };
 
-        const bindingObjs = [];
-        for (const raw of tapSlots) {
+        const bindingObjs = tapSlots.map(raw => {
             let ast = Parser.parseMacroParam(raw, state, context);
-            // Wrap bare keycode (no &-prefix) into a full &kp binding
-            if (ast && !ast.value.startsWith('&')) {
-                ast = { value: '&kp', params: [ast] };
-            }
-            // Enforce schema on whole subtree; fall back to &none for bad slots
-            bindingObjs.push(enforceSchema(ast));
-        }
-
-        // Build a stable, human-readable name: &td_A_B[_C]
-        const slotLabels = bindingObjs.map(b => {
-            if (b.value === '&kp' && b.params?.[0]) return b.params[0].value;
-            return b.value.replace('&', '').toUpperCase();
+            if (ast && !ast.value.startsWith('&')) ast = { value: '&kp', params: [ast] };
+            return enforceSchema(ast);
         });
+
+        const slotLabels = bindingObjs.map(b =>
+            (b.value === '&kp' && b.params?.[0]) ? b.params[0].value : b.value.replace('&', '').toUpperCase()
+        );
         const tdName = `&td_${slotLabels.join('_')}`;
 
-        // Register the behavior definition (deduped by name).
-        // Includes description and tappingTermMs to match the JSON schema.
         if (!state.tapDanceDefs.find(d => d.name === tdName)) {
             state.tapDanceDefs.push({
                 name: tdName,
-                description: `OMA: ${slotLabels.join(' / ')} (auto-converted from TD(${danceName}))`,
+                description: `OMA: ${slotLabels.join(' / ')} (from TD(${danceName}))`,
                 tappingTermMs: state.config.tappingTerm || 200,
                 bindings: bindingObjs
             });
         }
 
-        Utils.logConversion(state, `TD(${danceName})`, tdName, 'tap_dance',
-            `Auto-converted: ${slotLabels.join(' → ')}`);
+        Utils.logConversion(state, `TD(${danceName})`, tdName, 'tap_dance', `Auto-converted: ${slotLabels.join(' → ')}`);
         return { value: tdName, params: [] };
     },
 
@@ -409,41 +294,20 @@ const Parser = {
         let positionName = layerIdx === "Combo" ? "Inside Combo" : Utils.getSourcePosition(keyIdx);
         const context = { layer: layerIdx, pos: positionName, config: configInfo, color: keyColor };
 
-        // ── Macro interception ──────────────────────────────────────────────────
-        // ST_MACRO_* tokens are stored in state.macros; convert and register def.
-        if (tok.startsWith('ST_MACRO_') && state.macros[tok]) {
-            let macAst = Parser.parseMacroToZmk(tok, state.macros[tok], state, context);
-            if (macAst) return macAst;
-            Utils.logConversion(state, rawToken, "&none", "warning",
-                "Macro: could not auto-convert — complex C actions. Recreate using MoErgo Layout Editor Macro.", context);
-            return { value: "&none" };
-        }
-
-        // ── DUAL_FUNC hold-tap interception ─────────────────────────────────────
-        if (tok.startsWith('DUAL_FUNC(')) {
-            let htAst = Parser.parseHoldTapToZmk(tok, state, context);
-            if (htAst) return htAst;
-            Utils.logConversion(state, rawToken, "&none", "warning",
-                "DUAL_FUNC: could not parse hold/tap keycodes. Recreate using MoErgo Layout Editor Hold-Tap.", context);
-            return { value: "&none" };
-        }
-
-        // ── Tap-Dance interception ───────────────────────────────────────────────
-        // Runs before DEALBREAKER since TD( / DANCE_ are no longer in that list.
+        // Intercept TD(...) before DEALBREAKER — TD( and DANCE_ removed from that list
         let tdMatch = tok.match(/^TD\(([A-Z0-9_]+)\)$/i);
         if (tdMatch) {
             let danceName = tdMatch[1].toUpperCase();
-            let rawBlock  = state.tapDances[danceName] || state.tapDances["DANCE_" + danceName];
+            let rawBlock = state.tapDances[danceName] || state.tapDances['DANCE_' + danceName];
             if (rawBlock) {
                 let tdAst = Parser.parseTapDance(danceName, rawBlock, state, context);
                 if (tdAst) return tdAst;
             }
-            // Fallback: could not parse — warn and drop
             Utils.logConversion(state, rawToken, "&none", "warning",
-                "Tap Dance: could not auto-convert — too complex or missing SINGLE_TAP case. Recreate using MoErgo Layout Editor Tap-Dance.", context);
+                "Tap Dance: could not auto-convert — too complex or missing SINGLE_TAP. Recreate in MoErgo Layout Editor.", context);
             return { value: "&none" };
         }
-
+        
         if (Constants.DEALBREAKER_KEYS.some(bad => tok.includes(bad))) {
             Utils.logConversion(state, rawToken, "&none", "warning", Utils.getZmkSuggestion(rawToken), context);
             return { value: "&none" };
@@ -666,7 +530,7 @@ self.onmessage = async function(e) {
     try {
         if (!rawText) throw new Error("No source code text provided to the parser.");
 
-        const state = { log: { layer_binding: {}, hold_tap: {}, tap_dance: {}, combo: {}, warning: {} }, macros: {}, tapDances: {}, tapDanceDefs: [], macroDefs: [], holdTapDefs: [], rawDefines: {}, customCases: {}, config: { tappingTerm: 200, comboTerm: 50 }, defines: {} };
+        const state = { log: { layer_binding: {}, hold_tap: {}, tap_dance: {}, combo: {}, warning: {} }, macros: {}, tapDances: {}, tapDanceDefs: [], rawDefines: {}, customCases: {}, config: { tappingTerm: 200, comboTerm: 50 }, defines: {} };
         const cleanText = Parser.prepareCCode(rawText);
 
         let activeBoard = null, layoutMacroName = null;
@@ -850,14 +714,6 @@ if (activeBoard.name === "Voyager") {
         templateJson.uuid = Utils.safeUUID();
         templateJson.title = title ? `${title}_Appended` : "OMA_Export_Appended";
         
-        // ── Behavior definitions must be written before layer bindings reference them ──
-        // Order: macros → holdTaps → tapDances → layers → combos
-        if (state.macroDefs.length > 0) {
-            templateJson.macros = (templateJson.macros || []).concat(state.macroDefs);
-        }
-        if (state.holdTapDefs.length > 0) {
-            templateJson.holdTaps = (templateJson.holdTaps || []).concat(state.holdTapDefs);
-        }
         if (state.tapDanceDefs.length > 0) {
             templateJson.tapDances = (templateJson.tapDances || []).concat(state.tapDanceDefs);
         }
