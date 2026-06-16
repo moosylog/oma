@@ -223,7 +223,7 @@ const Parser = {
 
     // Parses a state.tapDances[DANCE_X] C block and returns a ZMK AST node.
     // Strategy:
-    //   SINGLE_TAP + DOUBLE_TAP only  → &td_NAME with 2 bindings in behaviors
+    //   SINGLE_TAP + DOUBLE_TAP only  → &td_NAME with 2 bindings in tapDances[]
     //   SINGLE_TAP + SINGLE_HOLD only → degrade to &mt (hold-tap, no tap-dance needed)
     //   3+ tap slots                  → &td_NAME with N bindings
     //   DOUBLE_HOLD / exotic          → warning, &none
@@ -262,15 +262,28 @@ const Parser = {
         const tapSlots = [singleTapRaw, doubleTapRaw, tripleTapRaw].filter(Boolean);
         if (tapSlots.length === 0) return null;  // nothing useful extracted
 
+        // Ensure every binding node conforms to the recursive schema:
+        // { value: string, params: [...] }  — params must always be an array.
+        const enforceSchema = (node) => {
+            if (!node) return { value: '&none' };
+            const out = { value: node.value };
+            if (Array.isArray(node.params) && node.params.length > 0) {
+                out.params = node.params.map(enforceSchema);
+            } else {
+                out.params = [];
+            }
+            return out;
+        };
+
         const bindingObjs = [];
         for (const raw of tapSlots) {
             let ast = Parser.parseMacroParam(raw, state, context);
-            if (!ast || ast.value === 'none') return null;  // bail if any slot is bad
-            // Wrap bare keycode ASTs into full &kp binding objects
-            let binding = (ast.value.startsWith('&'))
-                ? ast
-                : { value: '&kp', params: [ast] };
-            bindingObjs.push(binding);
+            // Wrap bare keycode (no &-prefix) into a full &kp binding
+            if (ast && !ast.value.startsWith('&')) {
+                ast = { value: '&kp', params: [ast] };
+            }
+            // Enforce schema on whole subtree; fall back to &none for bad slots
+            bindingObjs.push(enforceSchema(ast));
         }
 
         // Build a stable, human-readable name: &td_A_B[_C]
@@ -280,9 +293,15 @@ const Parser = {
         });
         const tdName = `&td_${slotLabels.join('_')}`;
 
-        // Register the behavior definition (deduped by name)
+        // Register the behavior definition (deduped by name).
+        // Includes description and tappingTermMs to match the JSON schema.
         if (!state.tapDanceDefs.find(d => d.name === tdName)) {
-            state.tapDanceDefs.push({ name: tdName, bindings: bindingObjs });
+            state.tapDanceDefs.push({
+                name: tdName,
+                description: `OMA: ${slotLabels.join(' / ')} (auto-converted from TD(${danceName}))`,
+                tappingTermMs: state.config.tappingTerm || 200,
+                bindings: bindingObjs
+            });
         }
 
         Utils.logConversion(state, `TD(${danceName})`, tdName, 'tap_dance',
@@ -727,7 +746,7 @@ if (activeBoard.name === "Voyager") {
         templateJson.layer_names = (templateJson.layer_names || []).concat(astLayers.map((_, i) => `OMA_${activeBoard.name}_${i}`));
         templateJson.combos = (templateJson.combos || []).concat(generatedCombos);
         if (state.tapDanceDefs.length > 0) {
-            templateJson.behaviors = (templateJson.behaviors || []).concat(state.tapDanceDefs);
+            templateJson.tapDances = (templateJson.tapDances || []).concat(state.tapDanceDefs);
         }
 
         self.postMessage({ 
