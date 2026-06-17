@@ -307,7 +307,7 @@ const Parser = {
                 "Tap Dance: could not auto-convert — too complex or missing SINGLE_TAP. Recreate in MoErgo Layout Editor.", context);
             return { value: "&none" };
         }
-        
+
         if (Constants.DEALBREAKER_KEYS.some(bad => tok.includes(bad))) {
             Utils.logConversion(state, rawToken, "&none", "warning", Utils.getZmkSuggestion(rawToken), context);
             return { value: "&none" };
