@@ -4,125 +4,16 @@ const MainUtils = {
         return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
     },
     
-isHoldTap: (name, payload = '') => {
-    if (!name && !payload) return false;
-    const str = String(name + ' ' + payload);
-    return str.includes('DUAL_FUNC');
-},
-	
-	
-    // Generic QMK Macro & Tap Dance Parser
-translateQMKMacro: (code) => {
-    if (!code) return "Rebuild as a ZMK <strong>Macro</strong> Behavior in the MoErgo Layout Editor.";
-    
-	// === DUAL_FUNC → Hold-Tap (Highest priority) ===
-if (code.includes('DUAL_FUNC')) {
-        return `
-            <strong class="block text-slate-800 text-xs mb-2">Hold-Tap Behavior</strong>
-            <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                <div class="flex items-center gap-2">
-                    <span class="font-mono text-blue-700">DUAL_FUNC</span>
-                    <span class="text-slate-400">→</span>
-                    <span class="font-medium text-slate-700">Hold-Tap / Dual-Function Key</span>
-                </div>
-                <p class="mt-2 text-[13px] text-slate-600">
-                    Rebuild as a ZMK <strong>Hold-Tap</strong> Behavior in the MoErgo Layout Editor.
-                </p>
-            </div>`;
-    }
-		
-		
-		
+    // Generic QMK Macro Parser
+    translateQMKMacro: (code) => {
+        if (!code) return "Rebuild as a Custom ZMK Macro.";
+        
+        // 1. Prevent "Double Content" by completely ignoring the boilerplate _reset functions!
         let codeToParse = code;
         if (codeToParse.includes('_reset')) {
-            // Hide the duplicate "release" function for clarity
             codeToParse = codeToParse.split(/void\s+[a-zA-Z0-9_]+_reset/)[0];
         }
-
-        // ====================================================================
-        // 1. SMART TAP-DANCE PARSER (Conditional Behaviors)
-        // ====================================================================
-        if (codeToParse.includes('case SINGLE_TAP:') || codeToParse.includes('dance_step')) {
-            let tdHtml = "";
-            const tdCases = [
-                { id: 'SINGLE_TAP', label: '1 Tap' },
-                { id: 'SINGLE_HOLD', label: 'Hold' },
-                { id: 'DOUBLE_TAP', label: '2 Taps' },
-                { id: 'DOUBLE_HOLD', label: 'Tap + Hold' },
-                { id: 'DOUBLE_SINGLE_TAP', label: 'Tap then Hold' },
-                { id: 'TRIPLE_TAP', label: '3 Taps' },
-                { id: 'TRIPLE_HOLD', label: '2 Taps + Hold' }
-            ];
-
-            let foundTd = false;
-            tdCases.forEach(c => {
-                let caseRegex = new RegExp(`case\\s+${c.id}:(.*?)(?:break;|case\\s+[A-Z_]+:|\\})`, 's');
-                let match = codeToParse.match(caseRegex);
-                
-                if (match) {
-                    let actionStr = match[1].trim();
-                    let steps = [];
-                    // Capture the contents of tap or register functions
-                    const regex = /(?:tap_code16|register_code16|tap_code|register_code)\((.*?)\)\s*;/g;
-                    let m;
-                    
-                    while ((m = regex.exec(actionStr)) !== null) {
-                        let rawKey = m[1];
-                        let uiKey = rawKey.replace(/KC_/g, '').replace(/X_/g, '');
-                        
-                        // Parse QMK Modifiers into clean UI labels
-                        uiKey = uiKey.replace(/LEFT_CTRL/g, 'Ctrl')
-                                     .replace(/LEFT_SHIFT/g, 'Shift')
-                                     .replace(/LEFT_ALT/g, 'Alt')
-                                     .replace(/LEFT_GUI/g, 'Cmd/Win')
-                                     .replace(/RIGHT_CTRL/g, 'RCtrl')
-                                     .replace(/RIGHT_SHIFT/g, 'RShift')
-                                     .replace(/RIGHT_ALT/g, 'RAlt')
-                                     .replace(/RIGHT_GUI/g, 'RCmd/Win')
-                                     .replace(/LCTL\((.*?)\)/, 'Ctrl + $1')
-                                     .replace(/LSFT\((.*?)\)/, 'Shift + $1')
-                                     .replace(/LALT\((.*?)\)/, 'Alt + $1')
-                                     .replace(/LGUI\((.*?)\)/, 'Cmd + $1')
-                                     .replace(/RCTL\((.*?)\)/, 'RCtrl + $1')
-                                     .replace(/RSFT\((.*?)\)/, 'RShift + $1')
-                                     .replace(/RALT\((.*?)\)/, 'RAlt + $1')
-                                     .replace(/RGUI\((.*?)\)/, 'RCmd + $1');
-                                     
-                        // Just create the visual keycap, no "Hold" or "Tap" text attached
-                        steps.push(`<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${uiKey}</span>`);
-                    }
-                    
-                    // Deduplicate identical keys (so Tap A + Hold A just becomes "A")
-                    let uniqueSteps = [...new Set(steps)];
-                    
-                    if (uniqueSteps.length > 0) {
-                        tdHtml += `
-                            <div class="flex items-center gap-3 mb-2 mt-1">
-                                <span class="w-24 shrink-0 text-[10px] font-bold text-slate-500 uppercase text-right">${c.label}</span> 
-                                <span class="text-slate-300 text-[10px]">➔</span> 
-                                <div class="flex flex-wrap items-center gap-y-1">
-                                    ${uniqueSteps.join('<span class="text-slate-300 text-[10px] mx-1">+</span>')}
-                                </div>
-                            </div>
-                        `;
-                        foundTd = true;
-                    }
-                }
-            });
-
-            if (foundTd) {
-                return `
-                    <strong class="block text-slate-800 text-xs mb-2">Tap Dance Behaviors:</strong>
-                    <div class="pt-1 pb-1">
-                        ${tdHtml}
-                    </div>
-                `;
-            }
-        }
-
-        // ====================================================================
-        // 2. STANDARD MACRO PARSER (Sequential Behaviors)
-        // ====================================================================
+        
         let htmlOutput = "";
         let cleanCode = codeToParse.replace(/if\s*\(.*?\)\s*\{/g, '').replace(/\}/g, '').replace(/break;/g, '').replace(/case ST_MACRO_.*?:/g, '').trim();
 
@@ -155,37 +46,20 @@ if (code.includes('DUAL_FUNC')) {
             htmlOutput += `<div class="flex items-center flex-wrap gap-y-2 leading-relaxed mb-2">${parsedStr}</div>`;
         }
 
-        const codeRegex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\)\s*;/g;
+        // 2. We skip "unregister_code" so we don't spam the user with redundant release steps
+        const codeRegex = /(tap_code16|register_code16|tap_code|register_code)\((.*?)\);/g;
         let tapSteps = [];
         while ((match = codeRegex.exec(cleanCode)) !== null) {
             hasContent = true;
             let action = match[1];
-            let rawKey = match[2];
-            let uiKey = rawKey.replace(/KC_/g, '').replace(/X_/g, '');
+            let key = match[2].replace('KC_', '').replace('X_', '');
+            let htmlKey = `<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${key}</span>`;
             
-            uiKey = uiKey.replace(/LEFT_CTRL/g, 'Ctrl')
-                         .replace(/LEFT_SHIFT/g, 'Shift')
-                         .replace(/LEFT_ALT/g, 'Alt')
-                         .replace(/LEFT_GUI/g, 'Cmd/Win')
-                         .replace(/RIGHT_CTRL/g, 'RCtrl')
-                         .replace(/RIGHT_SHIFT/g, 'RShift')
-                         .replace(/RIGHT_ALT/g, 'RAlt')
-                         .replace(/RIGHT_GUI/g, 'RCmd/Win')
-                         .replace(/LCTL\((.*?)\)/, 'Ctrl + $1')
-                         .replace(/LSFT\((.*?)\)/, 'Shift + $1')
-                         .replace(/LALT\((.*?)\)/, 'Alt + $1')
-                         .replace(/LGUI\((.*?)\)/, 'Cmd + $1')
-                         .replace(/RCTL\((.*?)\)/, 'RCtrl + $1')
-                         .replace(/RSFT\((.*?)\)/, 'RShift + $1')
-                         .replace(/RALT\((.*?)\)/, 'RAlt + $1')
-                         .replace(/RGUI\((.*?)\)/, 'RCmd + $1');
-                         
-            let keycap = `<span class="keycap text-[10px] bg-white !border-slate-300 shadow-sm mx-0.5">${uiKey}</span>`;
-            
-            if (action.includes('tap')) tapSteps.push(`Tap ${keycap}`);
-            else if (action.includes('register')) tapSteps.push(`Hold ${keycap}`);
+            if (action.includes('tap')) tapSteps.push(`Tap ${htmlKey}`);
+            else if (action.includes('register')) tapSteps.push(`Hold ${htmlKey}`);
         }
         
+        // De-duplicate identical sequential steps to keep it perfectly clean
         let uniqueSteps = [];
         tapSteps.forEach(step => {
             if (uniqueSteps[uniqueSteps.length - 1] !== step) {
@@ -201,10 +75,11 @@ if (code.includes('DUAL_FUNC')) {
             return `
                 <strong class="block text-slate-800 text-xs mb-2">Decoded Sequence:</strong>
                 ${htmlOutput}
+                <p class="text-[11px] text-slate-500 mt-2 border-t border-slate-100 pt-2">Recreate this using the "Macro" tab in the MoErgo Editor.</p>
             `;
         }
 
-        return "Rebuild as a ZMK <strong>Macro</strong> Behavior in the MoErgo Layout Editor.";
+        return "Rebuild as a Custom ZMK Macro.";
     }
 };
 
@@ -274,37 +149,40 @@ export const UI = {
         }, 1000);
     },
 
-    buildReport: (layerCount, state) => {
+    buildReport: (layerCount, tapDanceCount, modMorphCount, state) => {
         const reportContainer = document.getElementById('outputReport');
         if (!reportContainer) return;
 
-const warnInstances = Object.values(state.log.warning || {}).reduce((a, c) => a + c.count, 0);
-
-// === SPLIT DUAL_FUNC FROM MACROS ===
-const realMacros = {};
-const dualFuncHoldTaps = {};
-
-Object.entries(state.macros || {}).forEach(([keyName, payload]) => {
-    if (payload && payload.includes('DUAL_FUNC')) {
-        dualFuncHoldTaps[keyName] = {
-            translated: "Hold-Tap",
-            reason: "Rebuild as a ZMK <strong>Hold-Tap</strong> Behavior in the MoErgo Layout Editor.",
-            count: 1,
-            config: payload
-        };
-    } else {
-        realMacros[keyName] = payload;
-    }
-});
-
-const macroCount = Object.keys(realMacros).length;
-const totalNeedsRebuild = warnInstances + macroCount + Object.keys(dualFuncHoldTaps).length;
-
+        const warnInstances = Object.values(state.log.warning || {}).reduce((a, c) => a + c.count, 0);
+        const macroCount = Object.keys(state.macros || {}).length;
+        const tdLogCount = Object.keys(state.log.tap_dance || {}).length;
+        const mmLogCount = Object.keys(state.log.mod_morph || {}).length;
+        const totalNeedsRebuild = warnInstances + macroCount;
 
         const stdInstances = Object.values(state.log.layer_binding || {}).reduce((a, c) => a + c.count, 0);
-        const htInstances = Object.values(state.log.hold_tap || {}).reduce((a, c) => a + c.count, 0) + Object.keys(dualFuncHoldTaps).length;
+        const htInstances = Object.values(state.log.hold_tap || {}).reduce((a, c) => a + c.count, 0);
         const comboInstances = Object.values(state.log.combo || {}).reduce((a, c) => a + c.count, 0);
         const totalMapped = stdInstances + htInstances + comboInstances;
+
+        const buildTdRows = (logCat) => {
+            if (Object.keys(logCat).length === 0) return `<tr><td colspan="3" class="empty-state">No tap-dances found.</td></tr>`;
+            return Object.entries(logCat).map(([original, data]) => `
+                <tr>
+                    <td class="code"><span class="keycap !border-slate-200 !shadow-none">${MainUtils.escapeHTML(original)}</span></td>
+                    <td class="code"><span class="keycap keycap-composite">${MainUtils.escapeHTML(data.translated)}</span></td>
+                    <td class="reason">${MainUtils.escapeHTML(data.reason || 'Migrated as ZMK Tap-Dance.')}</td>
+                </tr>`).join('');
+        };
+
+        const buildMmRows = (logCat) => {
+            if (Object.keys(logCat).length === 0) return `<tr><td colspan="3" class="empty-state">No mod-morphs found.</td></tr>`;
+            return Object.entries(logCat).map(([original, data]) => `
+                <tr>
+                    <td class="code"><span class="keycap !border-slate-200 !shadow-none">${MainUtils.escapeHTML(original)}</span></td>
+                    <td class="code"><span class="keycap keycap-composite">${MainUtils.escapeHTML(data.translated)}</span></td>
+                    <td class="reason">${MainUtils.escapeHTML(data.reason || 'Migrated as ZMK Mod-Morph.')}</td>
+                </tr>`).join('');
+        };
 
         const buildRows = (logCat) => {
             if (Object.keys(logCat).length === 0) return `<tr><td colspan="4" class="empty-state">🎉 Clean conversion!</td></tr>`;
@@ -349,21 +227,22 @@ const totalNeedsRebuild = warnInstances + macroCount + Object.keys(dualFuncHoldT
                     }
                 }
 
-let abstractionHTML = '';
-let isDualFunc = !!(foundConfig && foundConfig.includes('DUAL_FUNC'));
-if (foundConfig && !isDualFunc) {
-    let decoded = MainUtils.translateQMKMacro(foundConfig);
-    if (decoded !== "Rebuild as a ZMK <strong>Macro</strong> Behavior in the MoErgo Layout Editor.") {
-        abstractionHTML = `
-            <div class="mb-4">
-                <div class="p-3 bg-indigo-50/40 border border-indigo-100 rounded-lg shadow-sm">
-                    ${decoded}
-                </div>
-            </div>
-        `;
-    }
-}
+                // Generate the Decoded Instructions
+                let abstractionHTML = '';
+                if (foundConfig) {
+                    let decoded = MainUtils.translateQMKMacro(foundConfig);
+                    if (decoded !== "Rebuild as a Custom ZMK Macro.") {
+                        abstractionHTML = `
+                            <div class="mb-4">
+                                <div class="p-3 bg-indigo-50/40 border border-indigo-100 rounded-lg shadow-sm">
+                                    ${decoded}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
 
+                // Cleanup the raw Config code so we don't show the duplicate _reset function
                 let configDisplay = '';
                 if (foundConfig) {
                     let displayConfig = foundConfig;
@@ -388,10 +267,10 @@ if (foundConfig && !isDualFunc) {
                         <span class="bg-slate-100 text-slate-500 text-[11px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${data.count} Instances</span>
                     </summary>
                     <div class="p-5 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
-<div class="mb-4">
-    <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">ZMK Replacement Suggestion</strong>
-    <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${isDualFunc ? 'Convert to a ZMK Hold-Tap Behavior.' : MainUtils.escapeHTML(data.reason)}</p>
-</div>
+                        <div class="mb-4">
+                            <strong class="block text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">ZMK Replacement Suggestion</strong>
+                            <p class="text-[13px] text-slate-800 font-medium leading-relaxed">${MainUtils.escapeHTML(data.reason)}</p>
+                        </div>
                         
                         ${abstractionHTML}
 
@@ -408,18 +287,18 @@ if (foundConfig && !isDualFunc) {
             `}).join('') + `</div>`;
         };
 
-const macroRows = macroCount === 0 
-    ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
-    : Object.entries(realMacros).map(([macName, payload]) => `
-        <tr>
-            <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
-            <td class="payload w-2/5 align-top pt-4">
-                <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
-                    <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
-                </div>
-            </td>
-            <td class="reason align-top pt-4 pl-4">${payload && payload.includes('DUAL_FUNC') ? 'Moved to Hold-Taps section.' : MainUtils.translateQMKMacro(payload)}</td>
-        </tr>`).join('');
+        const macroRows = macroCount === 0 
+            ? `<tr><td colspan="3" class="empty-state">No custom macros found.</td></tr>`
+            : Object.entries(state.macros).map(([macName, payload]) => `
+                <tr>
+                    <td class="code align-top pt-4"><span class="keycap">${MainUtils.escapeHTML(macName)}</span></td>
+                    <td class="payload w-2/5 align-top pt-4">
+                        <div class="bg-slate-900 rounded-lg p-3 max-h-32 overflow-y-auto shadow-inner">
+                            <pre class="bg-transparent p-0 m-0 text-slate-400 text-[10px] font-mono whitespace-pre-wrap">${MainUtils.escapeHTML(payload)}</pre>
+                        </div>
+                    </td>
+                    <td class="reason align-top pt-4 pl-4">${MainUtils.translateQMKMacro(payload)}</td>
+                </tr>`).join('');
 
         reportContainer.innerHTML = `
             <div class="checklist-container">
@@ -450,9 +329,17 @@ const macroRows = macroCount === 0
                             <p class="text-[13px] text-slate-500 leading-relaxed max-w-xl">ZSA keeps layer names (like "Symbols" or "Nav") hidden in the cloud. Take a quick moment to re-label <em>Layer_0</em>, <em>Layer_1</em>, etc. inside the Layout Editor.</p>
                         </div>
                     </div>
+                    ${(tapDanceCount > 0 || modMorphCount > 0) ? `
+                    <div class="checklist-item bg-violet-50/20">
+                        <div class="step-circle" style="background:#ede9fe;color:#7c3aed;border-color:#c4b5fd;">${totalNeedsRebuild > 0 ? '4' : '4'}</div>
+                        <div class="mt-0.5">
+                            <strong class="text-slate-900 block text-[15px] mb-1">Verify your Tap-Dances & Mod-Morphs</strong>
+                            <p class="text-[13px] text-slate-500 leading-relaxed max-w-xl">We auto-migrated <strong>${tapDanceCount} tap-dance${tapDanceCount !== 1 ? 's' : ''}</strong>${modMorphCount > 0 ? ` and <strong>${modMorphCount} mod-morph${modMorphCount !== 1 ? 's' : ''}</strong>` : ''} into your JSON. Open the <strong>Tap-Dance</strong>${modMorphCount > 0 ? ' and <strong>Mod-Morph</strong>' : ''} tab${modMorphCount > 0 ? 's' : ''} in the MoErgo Layout Editor and confirm each binding looks correct before flashing.</p>
+                        </div>
+                    </div>` : ''}
                     ${totalNeedsRebuild > 0 ? `
                     <div class="checklist-item bg-orange-50/30">
-                        <div class="step-circle step-circle-warn">4</div>
+                        <div class="step-circle step-circle-warn">${(tapDanceCount > 0 || modMorphCount > 0) ? '5' : '4'}</div>
                         <div class="mt-0.5">
                             <strong class="text-slate-900 block text-[15px] mb-1">Rebuild your Advanced Features</strong>
                             <p class="text-[13px] text-slate-500 leading-relaxed max-w-xl">We noticed you had some custom macros or advanced ZSA features! We safely left those keys blank. Check the detailed summary below for exact code references and instructions on how to rebuild them in ZMK.</p>
@@ -468,9 +355,11 @@ const macroRows = macroCount === 0
                     <div class="h-px bg-slate-200 flex-grow"></div>
                 </div>
 
-                <div class="stat-grid">
+                <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
                     <div class="stat-box"><div class="stat-num text-blue-600">${layerCount}</div><div class="stat-label">Layers</div></div>
                     <div class="stat-box"><div class="stat-num">${totalMapped}</div><div class="stat-label">Keys Auto-Mapped</div></div>
+                    <div class="stat-box ${tapDanceCount > 0 ? '' : ''}"><div class="stat-num text-violet-600">${tapDanceCount}</div><div class="stat-label">Tap-Dances</div></div>
+                    <div class="stat-box ${modMorphCount > 0 ? '' : ''}"><div class="stat-num text-teal-600">${modMorphCount}</div><div class="stat-label">Mod-Morphs</div></div>
                     <div class="stat-box ${warnInstances > 0 ? 'warning' : ''}"><div class="stat-num">${warnInstances}</div><div class="stat-label">Actions Required</div></div>
                 </div>
                 
@@ -505,7 +394,39 @@ const macroRows = macroCount === 0
                         <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
                         Hold-Taps / Dual-Function <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">${htInstances}</span>
                     </summary>
-                    <div class="cat-content"><table><tr><th>Original Key</th><th>MoErgo Target</th><th>Status</th><th class="text-center">Instances</th></tr>${buildRows({ ...state.log.hold_tap, ...dualFuncHoldTaps })}</table></div>
+                    <div class="cat-content"><table><tr><th>Original Key</th><th>MoErgo Target</th><th>Status</th><th class="text-center">Instances</th></tr>${buildRows(state.log.hold_tap)}</table></div>
+                </details>
+                
+                <details class="report-category">
+                    <summary>
+                        <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"></path></svg>
+                        Tap-Dances <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">${tapDanceCount}</span>
+                        ${tapDanceCount > 0 ? '<span class="ml-2 text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-md">✓ Added to JSON</span>' : ''}
+                    </summary>
+                    <div class="cat-content">
+                        ${tapDanceCount > 0 ? `
+                        <div class="p-4 bg-violet-50/40 border-b border-violet-100 text-[13px] text-violet-800 flex items-start gap-2">
+                            <svg class="w-4 h-4 shrink-0 mt-0.5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>QMK tap-dances have been auto-migrated to the correct ZMK behavior type based on their branch structure: dances with a <strong>hold branch</strong> become custom <strong>.holdTaps[]</strong> entries, dances with a <strong>double-tap</strong> become <strong>.tapDances[]</strong> entries, and dances with a <strong>shifted double-tap</strong> become <strong>.modMorphs[]</strong>. Matrix keys are rewritten to reference the correct behavior automatically. Verify each binding in the MoErgo Layout Editor before flashing.</span>
+                        </div>` : ''}
+                        <table><tr><th>QMK Source</th><th>ZMK Tap-Dance</th><th>Decoded Bindings</th></tr>${buildTdRows(state.log.tap_dance)}</table>
+                    </div>
+                </details>
+
+                <details class="report-category">
+                    <summary>
+                        <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                        Mod-Morphs <span class="ml-2 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-bold">${modMorphCount}</span>
+                        ${modMorphCount > 0 ? '<span class="ml-2 text-[10px] font-semibold text-teal-600 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">✓ Added to JSON</span>' : ''}
+                    </summary>
+                    <div class="cat-content">
+                        ${modMorphCount > 0 ? `
+                        <div class="p-4 bg-teal-50/40 border-b border-teal-100 text-[13px] text-teal-800 flex items-start gap-2">
+                            <svg class="w-4 h-4 shrink-0 mt-0.5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>These mod-morphs have been auto-migrated into the <strong>.modMorphs[]</strong> array in your downloaded JSON. They will appear in the <strong>Mod-Morph</strong> tab of the MoErgo Layout Editor. Each entry provides a base key and a shifted-modifier variant.</span>
+                        </div>` : ''}
+                        <table><tr><th>QMK Source</th><th>ZMK Mod-Morph</th><th>Base → Shifted Morph</th></tr>${buildMmRows(state.log.mod_morph)}</table>
+                    </div>
                 </details>
                 
                 <details class="report-category">
