@@ -221,68 +221,6 @@ const Parser = {
         return { value: resolved };
     },
 
-    parseTapDance: (danceName, rawBlock, state, context) => {
-        const finishedOnly = rawBlock.split(/void\s+[a-zA-Z0-9_]+_reset/)[0];
-
-        const extractKeyFromCase = (caseId, src) => {
-            let m = src.match(new RegExp(`case\\s+${caseId}\\s*:(.*?)(?:break;|case\\s+[A-Z_]+:|\\})`, 's'));
-            if (!m) return null;
-            let call = m[1].match(/(?:tap_code16|register_code16|tap_code|register_code)\(\s*(.*?)\s*\)\s*;/);
-            return call ? call[1].trim() : null;
-        };
-
-        const singleTapRaw  = extractKeyFromCase('SINGLE_TAP',  finishedOnly);
-        const doubleTapRaw  = extractKeyFromCase('DOUBLE_TAP',  finishedOnly);
-        const tripleTapRaw  = extractKeyFromCase('TRIPLE_TAP',  finishedOnly);
-        const singleHoldRaw = extractKeyFromCase('SINGLE_HOLD', finishedOnly);
-
-        // SINGLE_TAP + SINGLE_HOLD only → degrade to &mt
-        if (singleTapRaw && singleHoldRaw && !doubleTapRaw && !tripleTapRaw) {
-            let tapAst  = Parser.parseMacroParam(singleTapRaw,  state, context);
-            let holdAst = Parser.parseMacroParam(singleHoldRaw, state, context);
-            if (!tapAst || tapAst.value === 'none' || !holdAst || holdAst.value === 'none') return null;
-            Utils.logConversion(state, `TD(${danceName})`, `&mt ${holdAst.value} ${tapAst.value}`, 'hold_tap',
-                'Oryx Hold+Tap Dance degraded to ZMK Hold-Tap (&mt).');
-            return { value: '&mt', params: [holdAst, tapAst] };
-        }
-
-        // 1–3 tap slots → &td
-        const tapSlots = [singleTapRaw, doubleTapRaw, tripleTapRaw].filter(Boolean);
-        if (tapSlots.length === 0) return null;
-
-        // Recursively enforce { value, params: [] } schema on every node
-        const enforceSchema = (node) => {
-            if (!node) return { value: '&none' };
-            const out = { value: node.value, params: [] };
-            if (Array.isArray(node.params) && node.params.length > 0)
-                out.params = node.params.map(enforceSchema);
-            return out;
-        };
-
-        const bindingObjs = tapSlots.map(raw => {
-            let ast = Parser.parseMacroParam(raw, state, context);
-            if (ast && !ast.value.startsWith('&')) ast = { value: '&kp', params: [ast] };
-            return enforceSchema(ast);
-        });
-
-        const slotLabels = bindingObjs.map(b =>
-            (b.value === '&kp' && b.params?.[0]) ? b.params[0].value : b.value.replace('&', '').toUpperCase()
-        );
-        const tdName = `&td_${slotLabels.join('_')}`;
-
-        if (!state.tapDanceDefs.find(d => d.name === tdName)) {
-            state.tapDanceDefs.push({
-                name: tdName,
-                description: `OMA: ${slotLabels.join(' / ')} (from TD(${danceName}))`,
-                tappingTermMs: state.config.tappingTerm || 200,
-                bindings: bindingObjs
-            });
-        }
-
-        Utils.logConversion(state, `TD(${danceName})`, tdName, 'tap_dance', `Auto-converted: ${slotLabels.join(' → ')}`);
-        return { value: tdName, params: [] };
-    },
-
     translateAst: (rawToken, state, layerIdx = null, keyIdx = null, keyColor = null) => {
         if (!rawToken) return { value: "&none" };
         let tok = rawToken.trim();
@@ -293,21 +231,7 @@ const Parser = {
         let configInfo = Parser.getConfigForToken(rawToken, state);
         let positionName = layerIdx === "Combo" ? "Inside Combo" : Utils.getSourcePosition(keyIdx);
         const context = { layer: layerIdx, pos: positionName, config: configInfo, color: keyColor };
-
-        // Intercept TD(...) before DEALBREAKER — TD( and DANCE_ removed from that list
-        let tdMatch = tok.match(/^TD\(([A-Z0-9_]+)\)$/i);
-        if (tdMatch) {
-            let danceName = tdMatch[1].toUpperCase();
-            let rawBlock = state.tapDances[danceName] || state.tapDances['DANCE_' + danceName];
-            if (rawBlock) {
-                let tdAst = Parser.parseTapDance(danceName, rawBlock, state, context);
-                if (tdAst) return tdAst;
-            }
-            Utils.logConversion(state, rawToken, "&none", "warning",
-                "Tap Dance: could not auto-convert — too complex or missing SINGLE_TAP. Recreate in MoErgo Layout Editor.", context);
-            return { value: "&none" };
-        }
-
+        
         if (Constants.DEALBREAKER_KEYS.some(bad => tok.includes(bad))) {
             Utils.logConversion(state, rawToken, "&none", "warning", Utils.getZmkSuggestion(rawToken), context);
             return { value: "&none" };
@@ -530,7 +454,7 @@ self.onmessage = async function(e) {
     try {
         if (!rawText) throw new Error("No source code text provided to the parser.");
 
-        const state = { log: { layer_binding: {}, hold_tap: {}, tap_dance: {}, combo: {}, warning: {} }, macros: {}, tapDances: {}, tapDanceDefs: [], rawDefines: {}, customCases: {}, config: { tappingTerm: 200, comboTerm: 50 }, defines: {} };
+        const state = { log: { layer_binding: {}, hold_tap: {}, combo: {}, warning: {} }, macros: {}, tapDances: {}, rawDefines: {}, customCases: {}, config: { tappingTerm: 200, comboTerm: 50 }, defines: {} };
         const cleanText = Parser.prepareCCode(rawText);
 
         let activeBoard = null, layoutMacroName = null;
@@ -714,9 +638,6 @@ if (activeBoard.name === "Voyager") {
         templateJson.uuid = Utils.safeUUID();
         templateJson.title = title ? `${title}_Appended` : "OMA_Export_Appended";
         
-        if (state.tapDanceDefs.length > 0) {
-            templateJson.tapDances = (templateJson.tapDances || []).concat(state.tapDanceDefs);
-        }
         templateJson.layers = (templateJson.layers || []).concat(astLayers);
         templateJson.layer_names = (templateJson.layer_names || []).concat(astLayers.map((_, i) => `OMA_${activeBoard.name}_${i}`));
         templateJson.combos = (templateJson.combos || []).concat(generatedCombos);
